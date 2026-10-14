@@ -2,8 +2,6 @@
    Alfred Wong Kai Xiang, portfolio
    Vanilla JS, no dependencies. Everything degrades gracefully:
    if this file fails to load the page is still fully usable.
-   Most scroll effects live in styles.css (CSS scroll-driven animations);
-   this file handles smooth wheel scrolling, entrances and the interactive parts.
    ========================================================= */
 (function () {
   "use strict";
@@ -11,11 +9,9 @@
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
   const saveData = !!(navigator.connection && navigator.connection.saveData);
-  const scrollDriven = !!(window.CSS && CSS.supports && CSS.supports("animation-timeline: view()"));
   const $ = (sel, ctx) => (ctx || document).querySelector(sel);
   const $$ = (sel, ctx) => Array.from((ctx || document).querySelectorAll(sel));
   const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
-  const root = document.documentElement;
   const body = document.body;
 
   // small helper for building elements without innerHTML
@@ -30,39 +26,50 @@
     (kids || []).forEach((kid) => { if (kid) node.appendChild(kid); });
     return node;
   };
+  const root = document.documentElement;
 
-  /* ---------- smooth wheel scrolling (desktop mouse and trackpad only) ---------- */
-  // The page keeps native scrolling; the wheel is simply eased so the whole page glides.
-  // Keyboard, scrollbar, touch and reduced-motion users get the browser's own scrolling.
-  let scrollToY = (y) => window.scrollTo({ top: y, behavior: reduceMotion ? "auto" : "smooth" });
+  /* ---------- smooth scrolling, the Lenis way ---------- */
+  // Works like the Lenis library: the mouse wheel sets a target and the page eases towards it (lerp 0.1),
+  // and in-page links glide there with an exponential ease. Native scrolling stays in place underneath,
+  // so touch, keyboard, the scrollbar and reduced-motion visitors simply get the browser's own scrolling.
+  const smooth = { to: (y) => window.scrollTo({ top: y, behavior: reduceMotion ? "auto" : "smooth" }) };
   if (finePointer && !reduceMotion) {
-    root.classList.add("is-smooth");
-    let target = window.scrollY, current = target, lastSet = target, raf = 0;
+    root.classList.add("lenis");
+    let target = window.scrollY, current = target, lastSet = target, raf = 0, glide = null;
     const limit = () => root.scrollHeight - window.innerHeight;
-    const frame = () => {
+    const step = (now) => {
       // someone else moved the page (keys, scrollbar, find in page): hand control back
-      if (Math.abs(window.scrollY - lastSet) > 3) { target = current = lastSet = window.scrollY; raf = 0; return; }
-      current += (target - current) * 0.11;
-      if (Math.abs(target - current) < 0.5) current = target;
+      if (Math.abs(window.scrollY - lastSet) > 3) { target = current = lastSet = window.scrollY; glide = null; raf = 0; return; }
+      if (glide) {
+        const t = Math.min(1, (now - glide.start) / glide.dur);
+        current = glide.from + (glide.to - glide.from) * Math.min(1, 1.001 - Math.pow(2, -10 * t));
+        if (t >= 1) { current = target = glide.to; glide = null; }
+      } else {
+        current += (target - current) * 0.1;
+        if (Math.abs(target - current) < 0.5) current = target;
+      }
       window.scrollTo(0, current);
       lastSet = window.scrollY;
-      raf = current === target ? 0 : requestAnimationFrame(frame);
+      raf = glide || current !== target ? requestAnimationFrame(step) : 0;
     };
-    scrollToY = (y) => {
-      if (!raf) { current = lastSet = window.scrollY; }
-      target = clamp(y, 0, limit());
-      if (!raf) raf = requestAnimationFrame(frame);
-    };
+    const run = () => { if (!raf) raf = requestAnimationFrame(step); };
     window.addEventListener("wheel", (e) => {
-      if (e.ctrlKey || e.defaultPrevented || body.classList.contains("intro-active") || root.style.overflow === "hidden") return;
+      if (e.ctrlKey || body.classList.contains("intro-active") || root.style.overflow === "hidden") return;
       if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return; // sideways gestures stay native
-      if (e.target.closest && e.target.closest("textarea, select, .wa-preview__bubble")) return;
+      if (e.target.closest && e.target.closest("textarea, select, [data-lenis-prevent]")) return;
       e.preventDefault();
-      const delta = e.deltaY * (e.deltaMode === 1 ? 32 : e.deltaMode === 2 ? window.innerHeight : 1);
-      if (!raf) { target = window.scrollY; }
-      scrollToY(target + delta);
+      if (!raf) { current = lastSet = target = window.scrollY; }
+      glide = null;
+      target = clamp(target + e.deltaY * (e.deltaMode === 1 ? 32 : e.deltaMode === 2 ? window.innerHeight : 1), 0, limit());
+      run();
     }, { passive: false });
-    window.addEventListener("resize", () => { target = clamp(target, 0, limit()); });
+    smooth.to = (y) => {
+      if (!raf) { current = lastSet = window.scrollY; }
+      const to = clamp(y, 0, limit());
+      glide = { from: current, to, start: performance.now(), dur: Math.min(2200, 800 + Math.abs(to - current) * 0.2) };
+      target = to;
+      run();
+    };
   }
 
   // in-page links glide to their section and move keyboard focus there
@@ -70,12 +77,11 @@
     const a = e.target.closest && e.target.closest('a[href^="#"]');
     if (!a || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
     const id = a.getAttribute("href");
-    if (!id || id.length < 2) return;
-    const dest = document.getElementById(id.slice(1));
+    const dest = id && id.length > 1 ? document.getElementById(id.slice(1)) : null;
     if (!dest) return;
     e.preventDefault();
     const pad = id === "#top" ? 0 : parseFloat(getComputedStyle(root).scrollPaddingTop) || 0;
-    scrollToY(dest.getBoundingClientRect().top + window.scrollY - pad);
+    smooth.to(dest.getBoundingClientRect().top + window.scrollY - pad);
     if (history.pushState) history.pushState(null, "", id);
     if (!dest.hasAttribute("tabindex")) dest.setAttribute("tabindex", "-1");
     dest.focus({ preventScroll: true });
@@ -156,7 +162,7 @@
   if (bubble) {
     const said = new Set();
     let hideTimer = 0;
-    const heroInView = () => window.scrollY < window.innerHeight * 0.5;
+    const heroInView = () => window.scrollY < window.innerHeight * 0.6;
     const say = (key, text, ms) => {
       if (said.has(key) || !heroInView()) return;
       said.add(key);
@@ -189,10 +195,14 @@
   const nav = $("[data-nav]");
   const sentinel = $("[data-nav-sentinel]");
   if (nav && sentinel && "IntersectionObserver" in window) {
-    new IntersectionObserver(([entry]) => nav.classList.toggle("is-scrolled", !entry.isIntersecting), { threshold: 0 }).observe(sentinel);
+    new IntersectionObserver(
+      ([entry]) => nav.classList.toggle("is-scrolled", !entry.isIntersecting),
+      { threshold: 0 }
+    ).observe(sentinel);
   } else if (nav) {
     nav.classList.add("is-scrolled");
   }
+
   const toggle = $("[data-nav-toggle]");
   const mobile = $("[data-nav-mobile]");
   if (nav && toggle && mobile) {
@@ -201,7 +211,7 @@
       nav.classList.toggle("is-open", open);
       toggle.setAttribute("aria-expanded", String(open));
       toggle.setAttribute("aria-label", open ? "Close menu" : "Open menu");
-      root.style.overflow = open ? "hidden" : "";
+      document.documentElement.style.overflow = open ? "hidden" : "";
     };
     toggle.addEventListener("click", () => setOpen(!nav.classList.contains("is-open")));
     $$("a", mobile).forEach((a) => a.addEventListener("click", () => setOpen(false)));
@@ -209,61 +219,134 @@
     window.matchMedia("(min-width: 900px)").addEventListener("change", (e) => { if (e.matches) setOpen(false); });
   }
 
-  /* ---------- headings: words rise out of a mask ---------- */
-  const maskWords = (h, accentWord) => {
+  /* ---------- headings: hero words rise out of a mask, section headings rise word by word ---------- */
+  $$("[data-split]").forEach((h) => {
     const words = h.textContent.trim().split(/\s+/);
+    const accent = (h.dataset.accent || "").toLowerCase();
     h.setAttribute("aria-label", words.join(" "));
     h.textContent = "";
     words.forEach((word, i) => {
-      const isAccent = accentWord && word.toLowerCase().replace(/[^a-z]/g, "") === accentWord;
-      h.appendChild(el("span", { class: "w" + (isAccent ? " w--accent" : ""), "aria-hidden": "true" }, [
+      const isAccent = accent && word.toLowerCase().replace(/[^a-z]/g, "") === accent;
+      const outer = el("span", { class: "w" + (isAccent ? " w--accent" : ""), "aria-hidden": "true" }, [
         el("span", { class: "w__in", style: "--i: " + i, text: word })
-      ]));
+      ]);
+      h.appendChild(outer);
       if (i < words.length - 1) h.appendChild(document.createTextNode(" "));
     });
-  };
-  $$("[data-split]").forEach((h) => maskWords(h, (h.dataset.accent || "").toLowerCase()));
-  if (!reduceMotion) $$(".rv-words").forEach((h) => maskWords(h, ""));
-
-  /* ---------- statement: split into words so each one can light up as you scroll ---------- */
-  $$("[data-scrub-words]").forEach((p) => {
-    const words = p.textContent.trim().split(/\s+/);
-    p.setAttribute("aria-label", words.join(" "));
-    p.textContent = "";
-    words.forEach((word, i) => {
-      const start = 18 + (i / words.length) * 40; // percentages of the scroll range
-      const span = el("span", { class: "sw", "aria-hidden": "true", text: word });
-      span.style.animationRange = "cover " + start.toFixed(1) + "% cover " + (start + 7).toFixed(1) + "%";
-      p.appendChild(span);
-      if (i < words.length - 1) p.appendChild(document.createTextNode(" "));
-    });
   });
+  if (!reduceMotion) {
+    $$("[data-words]").forEach((h) => {
+      const words = h.textContent.trim().split(/\s+/);
+      h.setAttribute("aria-label", words.join(" "));
+      h.textContent = "";
+      words.forEach((word, i) => {
+        h.appendChild(el("span", { class: "w", style: "--i: " + i, "aria-hidden": "true", text: word + (i < words.length - 1 ? " " : "") }));
+      });
+    });
+  }
 
-  /* ---------- ticker: a second copy keeps the fallback loop seamless ---------- */
-  $$("[data-ticker] .ticker__track").forEach((track) => {
+  /* ---------- hero: light, frame and floating work follow the pointer ---------- */
+  const hero = $(".hero");
+  const aura = $("[data-hero-aura]");
+  const heroFrame = $(".hero__frame");
+  const floats = $$(".float");
+  if (hero && finePointer && !reduceMotion) {
+    let raf = 0, mx = 0, my = 0;
+    const apply = () => {
+      raf = 0;
+      if (aura) { aura.style.setProperty("--mx", mx.toFixed(3)); aura.style.setProperty("--my", my.toFixed(3)); }
+      if (heroFrame) { heroFrame.style.setProperty("--tx", (mx * 5).toFixed(2)); heroFrame.style.setProperty("--ty", (my * -4).toFixed(2)); }
+      floats.forEach((f) => {
+        const d = parseFloat(f.dataset.depth) || 1;
+        f.style.setProperty("--px", (mx * -16 * d).toFixed(1));
+        f.style.setProperty("--py", (my * -12 * d).toFixed(1));
+      });
+    };
+    hero.addEventListener("pointermove", (e) => {
+      const r = hero.getBoundingClientRect();
+      mx = ((e.clientX - r.left) / r.width - 0.5) * 2;   // -1 .. 1
+      my = ((e.clientY - r.top) / r.height - 0.5) * 2;
+      if (!raf) raf = requestAnimationFrame(apply);
+    });
+    hero.addEventListener("pointerleave", () => { mx = 0; my = 0; if (!raf) raf = requestAnimationFrame(apply); });
+  }
+
+  /* ---------- magnetic primary buttons ---------- */
+  if (finePointer && !reduceMotion) {
+    $$("[data-magnetic]").forEach((btn) => {
+      btn.addEventListener("pointermove", (e) => {
+        const r = btn.getBoundingClientRect();
+        const x = (e.clientX - r.left - r.width / 2) * 0.18;
+        const y = (e.clientY - r.top - r.height / 2) * 0.28;
+        btn.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+      });
+      btn.addEventListener("pointerleave", () => { btn.style.transform = ""; });
+    });
+  }
+
+  /* ---------- marquees: seamless loop that speeds up (and turns around) with your scrolling ---------- */
+  const tracks = $$("[data-marquee] .marquee__track");
+  tracks.forEach((track) => {
     track.innerHTML += track.innerHTML;
     $$("span", track).forEach((s, i, all) => { if (i >= all.length / 2) s.setAttribute("aria-hidden", "true"); });
   });
+  if (!reduceMotion && tracks.length) {
+    const state = tracks.map((t) => ({ t, x: 0, half: 0, speed: parseFloat(t.dataset.speed) || 1, visible: true }));
+    const measure = () => state.forEach((s) => { s.half = s.t.scrollWidth / 2; });
+    measure();
+    window.addEventListener("resize", measure);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+    state.forEach((s) => s.t.classList.add("is-driven"));
+    if ("IntersectionObserver" in window) {
+      const io = new IntersectionObserver((entries) => entries.forEach((en) => {
+        const s = state.find((x) => x.t.parentElement === en.target);
+        if (s) s.visible = en.isIntersecting;
+      }));
+      state.forEach((s) => io.observe(s.t.parentElement));
+    }
+    let lastY = window.scrollY, vel = 0, prev = performance.now(), dir = 1;
+    const loop = (now) => {
+      const dt = Math.min(64, now - prev);
+      prev = now;
+      const y = window.scrollY;
+      vel += ((y - lastY) - vel) * 0.12;
+      lastY = y;
+      if (vel > 0.6) dir = 1; else if (vel < -0.6) dir = -1;
+      const boost = 1 + Math.min(5, Math.abs(vel) * 0.22);
+      state.forEach((s) => {
+        if (!s.visible || !s.half) return;
+        s.x -= s.speed * 0.04 * dt * boost * dir;
+        if (s.x <= -s.half) s.x += s.half;
+        if (s.x > 0) s.x -= s.half;
+        s.t.style.transform = "translate3d(" + s.x.toFixed(2) + "px,0,0)";
+      });
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  }
 
-  /* ---------- entrances ---------- */
-  const revealEls = $$(".rv, .rv-words");
+  /* ---------- scroll reveal ---------- */
+  const revealEls = $$(".reveal, [data-words]");
   if ("IntersectionObserver" in window && !reduceMotion) {
     const io = new IntersectionObserver((entries) => {
       entries.forEach((en) => {
-        if (!en.isIntersecting) return;
-        en.target.classList.add("in");
-        io.unobserve(en.target);
+        if (en.isIntersecting) {
+          en.target.classList.add("is-in");
+          io.unobserve(en.target);
+          // the stagger delay is only for the entrance; drop it so hover reacts instantly afterwards
+          setTimeout(() => en.target.style.removeProperty("--d"), 1400);
+        }
       });
-    }, { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
+    }, { threshold: 0.15, rootMargin: "0px 0px -8% 0px" });
     revealEls.forEach((elm) => io.observe(elm));
   } else {
-    revealEls.forEach((elm) => elm.classList.add("in"));
+    revealEls.forEach((elm) => elm.classList.add("is-in"));
   }
 
-  // numbers count up once visible ("20" with data-suffix "+" ends as "20+")
+  /* ---------- numbers count up once visible ---------- */
   $$("[data-count]").forEach((elm) => {
     const target = parseFloat(elm.dataset.count);
-    const suffix = elm.dataset.suffix || "";
+    const suffix = elm.dataset.suffix || ""; // "20" counts up and ends as "20+"
     if (isNaN(target) || reduceMotion || !("IntersectionObserver" in window)) return;
     const io = new IntersectionObserver((entries) => {
       if (!entries.some((e) => e.isIntersecting)) return;
@@ -271,7 +354,8 @@
       const start = performance.now(), dur = 1300;
       const tick = (now) => {
         const p = Math.min(1, (now - start) / dur);
-        elm.textContent = Math.round(target * (1 - Math.pow(1 - p, 3))) + (p === 1 ? suffix : "");
+        const eased = 1 - Math.pow(1 - p, 3);
+        elm.textContent = Math.round(target * eased) + (p === 1 ? suffix : "");
         if (p < 1) requestAnimationFrame(tick);
       };
       requestAnimationFrame(tick);
@@ -279,84 +363,117 @@
     io.observe(elm);
   });
 
-  /* ---------- magnetic primary buttons (mouse only) ---------- */
-  if (finePointer && !reduceMotion) {
-    $$("[data-magnetic]").forEach((btn) => {
-      btn.addEventListener("pointermove", (e) => {
-        const r = btn.getBoundingClientRect();
-        btn.style.transform = "translate(" + ((e.clientX - r.left - r.width / 2) * 0.15).toFixed(1) + "px, " + ((e.clientY - r.top - r.height / 2) * 0.25).toFixed(1) + "px)";
+  /* ---------- service tiles: cursor spotlight ---------- */
+  if (finePointer) {
+    $$(".bento .tile").forEach((tile) => {
+      tile.addEventListener("pointermove", (e) => {
+        const r = tile.getBoundingClientRect();
+        tile.style.setProperty("--sx", ((e.clientX - r.left) / r.width * 100).toFixed(1) + "%");
+        tile.style.setProperty("--sy", ((e.clientY - r.top) / r.height * 100).toFixed(1) + "%");
       });
-      btn.addEventListener("pointerleave", () => { btn.style.transform = ""; });
     });
   }
 
-  /* ---------- work: the horizontal reel ---------- */
-  // Desktop browsers with CSS scroll-driven animations pin the reel and slide it as you scroll (see styles.css).
-  // Everywhere else it is a normal sideways scroller, with arrow buttons for mouse users.
-  const pan = $("[data-pan]");
-  if (pan) {
-    const view = $("[data-pan-view]", pan);
-    const track = $("[data-pan-track]", pan);
-    const cards = $$(".wcard", track);
-    const bar = $("[data-pan-bar]", pan);
-    const navEl = $("[data-pan-nav]", pan);
+  /* ---------- work: a reel of live sites ---------- */
+  // Desktop: the section pins and your vertical scrolling slides the cards sideways.
+  // Phones, tablets and reduced motion: a normal sideways scroller you can swipe.
+  const reel = $("[data-reel]");
+  if (reel) {
+    const viewport = $("[data-reel-viewport]", reel);
+    const track = $("[data-reel-track]", reel);
+    const cards = $$(".card", track);
+    const bar = $("[data-reel-bar]", reel);
+    const indexEl = $("[data-reel-index]");
+    const total = cards.filter((c) => !c.classList.contains("card--next")).length;
     const wide = window.matchMedia("(min-width: 1000px)");
-    let pinned = false;
+    let pinned = false, maxX = 0, raf = 0;
 
-    const measure = () => {
-      const want = scrollDriven && wide.matches && !reduceMotion;
-      if (want !== pinned) { pinned = want; root.classList.toggle("pan-on", pinned); }
-      if (pinned) pan.style.setProperty("--pan-dist", Math.max(0, track.scrollWidth - window.innerWidth));
-      if (navEl) navEl.hidden = pinned || !finePointer;
+    const setIndex = (centre) => {
+      let best = 0, bestD = Infinity;
+      cards.forEach((c, i) => {
+        const d = Math.abs(c.offsetLeft + c.offsetWidth / 2 - centre);
+        if (d < bestD) { bestD = d; best = i; }
+      });
+      if (indexEl) indexEl.textContent = String(Math.min(best + 1, total)).padStart(2, "0");
     };
-    measure();
-    window.addEventListener("resize", measure);
-    window.addEventListener("load", measure);
-    wide.addEventListener("change", measure);
-
-    // sideways scroller: progress line and arrow buttons
-    view.addEventListener("scroll", () => {
-      if (pinned || !bar) return;
-      const max = view.scrollWidth - view.clientWidth;
-      bar.style.setProperty("--p", (max > 0 ? view.scrollLeft / max : 0).toFixed(4));
-    }, { passive: true });
-    const stepBy = (dir) => {
-      const w = cards[0] ? cards[0].getBoundingClientRect().width : view.clientWidth * 0.8;
-      view.scrollBy({ left: dir * (w + 40), behavior: reduceMotion ? "auto" : "smooth" });
+    // cards away from the middle turn slightly, like pages in a book
+    const shape = (centre) => {
+      cards.forEach((c) => {
+        const d = clamp((c.offsetLeft + c.offsetWidth / 2 - centre) / (window.innerWidth * 0.9), -1, 1);
+        c.style.setProperty("--rot", (d * -9).toFixed(2));
+        c.style.setProperty("--scale", (1 - Math.abs(d) * 0.05).toFixed(3));
+      });
     };
-    const prev = $("[data-pan-prev]", pan), next = $("[data-pan-next]", pan);
-    if (prev) prev.addEventListener("click", () => stepBy(-1));
-    if (next) next.addEventListener("click", () => stepBy(1));
-
-    // pinned reel: tabbing to a card scrolls the page to where that card is in view
-    track.addEventListener("focusin", (e) => {
-      if (!pinned) return;
-      const card = e.target.closest(".wcard");
-      if (!card) return;
-      view.scrollLeft = 0;
-      const dist = Math.max(1, track.scrollWidth - window.innerWidth);
-      const x = clamp(card.offsetLeft + card.offsetWidth / 2 - window.innerWidth / 2, 0, dist);
-      const top = pan.getBoundingClientRect().top + window.scrollY;
-      scrollToY(top + (x / dist) * (pan.offsetHeight - window.innerHeight));
-    });
-
-    // cards sit far to the side, so load their images as the reel approaches rather than waiting
+    const update = () => {
+      raf = 0;
+      if (pinned) {
+        const r = reel.getBoundingClientRect();
+        const p = clamp(-r.top / Math.max(1, reel.offsetHeight - window.innerHeight), 0, 1);
+        const x = p * maxX;
+        track.style.setProperty("--x", x.toFixed(1));
+        if (bar) bar.style.setProperty("--p", p.toFixed(4));
+        setIndex(x + window.innerWidth / 2);
+        shape(x + window.innerWidth / 2);
+      } else {
+        const max = viewport.scrollWidth - viewport.clientWidth;
+        if (bar) bar.style.setProperty("--p", (max > 0 ? viewport.scrollLeft / max : 0).toFixed(4));
+        setIndex(viewport.scrollLeft + viewport.clientWidth / 2);
+      }
+    };
+    const request = () => { if (!raf) raf = requestAnimationFrame(update); };
+    const layout = () => {
+      const want = wide.matches && !reduceMotion;
+      if (want !== pinned) {
+        pinned = want;
+        reel.classList.toggle("is-pinned", pinned);
+        if (!pinned) {
+          reel.style.height = "";
+          track.style.removeProperty("--x");
+          cards.forEach((c) => { c.style.removeProperty("--rot"); c.style.removeProperty("--scale"); });
+        }
+      }
+      if (pinned) {
+        maxX = Math.max(0, track.scrollWidth - window.innerWidth);
+        // 0.7: the cards travel a little faster than you scroll, so the reel never drags
+        reel.style.height = (window.innerHeight + maxX * 0.7) + "px";
+      }
+      update();
+    };
+    // cards sit far to the side, so lazy loading would wait too long: load them all as the reel approaches
     if ("IntersectionObserver" in window) {
       const near = new IntersectionObserver((entries) => {
         if (!entries.some((en) => en.isIntersecting)) return;
         near.disconnect();
         $$("img[loading='lazy']", track).forEach((img) => { img.loading = "eager"; });
-      }, { rootMargin: "900px 0px" });
-      near.observe(pan);
+      }, { rootMargin: "800px 0px" });
+      near.observe(reel);
     }
+    window.addEventListener("scroll", () => { if (pinned) request(); }, { passive: true });
+    viewport.addEventListener("scroll", () => { if (!pinned) request(); }, { passive: true });
+    window.addEventListener("resize", layout);
+    window.addEventListener("load", layout);
+    wide.addEventListener("change", layout);
+    layout();
+
+    // keyboard: tabbing to a card scrolls the page so that card is in view
+    track.addEventListener("focusin", (e) => {
+      if (!pinned) return;
+      const card = e.target.closest(".card");
+      if (!card) return;
+      viewport.scrollLeft = 0;
+      const target = clamp(card.offsetLeft + card.offsetWidth / 2 - window.innerWidth / 2, 0, maxX);
+      const reelTop = reel.getBoundingClientRect().top + window.scrollY;
+      const y = reelTop + (maxX ? target / maxX : 0) * (reel.offsetHeight - window.innerHeight);
+      smooth.to(y);
+    });
 
     // rest the pointer on a preview to scroll through the whole homepage (data-full on each card)
     if (finePointer && !reduceMotion) {
       cards.forEach((card) => {
         const src = card.dataset.full;
-        const link = $(".wcard__link", card);
-        const screen = $(".wcard__screen", card);
-        if (!src || !link || !screen) return;
+        const shot = $(".card__shot", card);
+        const screen = $(".card__screen", card);
+        if (!src || !shot || !screen) return;
         let full = null, hovering = false, timer = 0;
         const reset = () => {
           clearTimeout(timer);
@@ -373,23 +490,49 @@
           clearTimeout(timer);
           timer = setTimeout(() => {
             if (!hovering) return;
+            const secs = Math.min(20, Math.max(6, travel / 150));
             full.classList.add("is-moving");
-            full.style.transitionDuration = Math.min(20, Math.max(6, travel / 150)).toFixed(1) + "s, .5s";
+            full.style.transitionDuration = secs.toFixed(1) + "s, .5s";
             full.style.transform = "translateY(" + (-travel) + "px)";
           }, 450);
         };
-        screen.addEventListener("pointerenter", () => {
+        shot.addEventListener("pointerenter", () => {
           hovering = true;
           if (!full) {
-            full = el("img", { class: "wcard__full", alt: "", decoding: "async" });
+            full = el("img", { class: "card__full", alt: "", decoding: "async" });
             full.addEventListener("error", () => { if (full) full.remove(); full = null; }, { once: true });
             screen.appendChild(full);
             full.src = src;
           }
           if (full.complete && full.naturalHeight) run(); else full.addEventListener("load", run, { once: true });
         });
-        screen.addEventListener("pointerleave", () => { hovering = false; reset(); });
+        shot.addEventListener("pointerleave", () => { hovering = false; reset(); });
       });
+    }
+  }
+
+  /* ---------- process: the line fills and each step lights up as you scroll ---------- */
+  const steps = $("[data-steps]");
+  if (steps) {
+    const items = $$(".steps__item", steps);
+    if (reduceMotion) {
+      steps.style.setProperty("--p", 1);
+      items.forEach((it) => it.classList.add("is-on"));
+    } else {
+      let raf = 0;
+      const update = () => {
+        raf = 0;
+        const line = window.innerHeight * 0.62;
+        const r = steps.getBoundingClientRect();
+        steps.style.setProperty("--p", clamp((line - r.top) / r.height, 0, 1).toFixed(3));
+        items.forEach((it) => {
+          const ir = it.getBoundingClientRect();
+          it.classList.toggle("is-on", ir.top + ir.height * 0.35 < line);
+        });
+      };
+      window.addEventListener("scroll", () => { if (!raf) raf = requestAnimationFrame(update); }, { passive: true });
+      window.addEventListener("resize", update);
+      update();
     }
   }
 
@@ -413,6 +556,345 @@
       }
     }), { rootMargin: "200px 0px" });
     videos.forEach((v) => io.observe(v));
+  }
+
+  /* ---------- footer: the name fills with colour as you reach the end ---------- */
+  const mark = $("[data-footer-mark]");
+  if (mark) {
+    if (reduceMotion) {
+      mark.style.setProperty("--fill", 1);
+    } else {
+      let raf = 0;
+      // empty when the name first appears, full at the very bottom of the page
+      const update = () => {
+        raf = 0;
+        const start = mark.getBoundingClientRect().top + window.scrollY - window.innerHeight;
+        const end = document.documentElement.scrollHeight - window.innerHeight;
+        mark.style.setProperty("--fill", clamp((window.scrollY - start) / Math.max(1, end - start), 0, 1).toFixed(3));
+      };
+      window.addEventListener("scroll", () => { if (!raf) raf = requestAnimationFrame(update); }, { passive: true });
+      update();
+    }
+  }
+
+  /* ---------- cursor follower: a soft ring that says "Visit" over live sites ---------- */
+  const cursor = $("[data-cursor]");
+  if (cursor && finePointer && !reduceMotion) {
+    const label = $("[data-cursor-label]", cursor);
+    let tx = -100, ty = -100, cx = -100, cy = -100, raf = 0, shown = false;
+    const tick = () => {
+      cx += (tx - cx) * 0.22;
+      cy += (ty - cy) * 0.22;
+      cursor.style.setProperty("--cx", cx.toFixed(1) + "px");
+      cursor.style.setProperty("--cy", cy.toFixed(1) + "px");
+      raf = Math.abs(tx - cx) + Math.abs(ty - cy) > 0.3 ? requestAnimationFrame(tick) : 0;
+    };
+    window.addEventListener("pointermove", (e) => {
+      if (e.pointerType !== "mouse") return;
+      tx = e.clientX; ty = e.clientY;
+      if (!shown) { shown = true; cx = tx; cy = ty; cursor.classList.add("is-on"); }
+      if (!raf) raf = requestAnimationFrame(tick);
+    }, { passive: true });
+    document.documentElement.addEventListener("mouseleave", () => { shown = false; cursor.classList.remove("is-on"); });
+    document.addEventListener("pointerover", (e) => {
+      const big = e.target.closest("[data-cursor-text]");
+      const hover = e.target.closest("a, button, label, input, select, textarea");
+      cursor.classList.toggle("is-big", !!big);
+      cursor.classList.toggle("is-hover", !big && !!hover);
+      if (label) label.textContent = big ? big.dataset.cursorText : "";
+    });
+  }
+
+  /* ---------- background field: an abstract clip, redrawn as tangerine dots ---------- */
+  // field-sprite.webp holds 120 small frames of a slow flowing-wave clip (made with Higgsfield).
+  // How far you have scrolled picks the frame, each frame is read as a coarse grid of brightness
+  // values, and every grid cell becomes a dot sized by that brightness. Dots near the mouse swell
+  // and move aside. Reduced motion and data saver get one still frame.
+  const fieldCanvas = $("[data-field]");
+  if (fieldCanvas && fieldCanvas.getContext) {
+    const SPRITE = { src: "field-sprite.webp", frames: 120, cols: 12, w: 160, h: 90 };
+    const ctx = fieldCanvas.getContext("2d");
+    const sample = document.createElement("canvas");
+    const sctx = sample.getContext("2d", { willReadFrequently: true });
+    const sheet = new Image();
+    const still = reduceMotion || saveData;
+    let W = 0, H = 0, cell = 14, cols = 0, rows = 0, ready = false, raf = 0, last = 0;
+    let frame = 0, frameTarget = 0, idle = 0, mx = -9999, my = -9999, pull = 0, pullTarget = 0;
+    // how strong the field is behind each section: full where there is little text, faint behind reading
+    const LEVELS = [["#top", 0.85], ["#proof", 1], ["#work", 0.55], ["#speed", 0.6], ["#yours", 0.35], ["#services", 0.5], ["#process", 0.35], ["#about", 0.2], ["#testimonials", 0.3], ["#contact", 0.22], [".footer", 0.9]];
+    let level = 1, levelTarget = 1;
+    if ("IntersectionObserver" in window) {
+      const zones = new IntersectionObserver((entries) => {
+        entries.forEach((en) => { if (en.isIntersecting) levelTarget = parseFloat(en.target.dataset.fieldLevel); });
+      }, { rootMargin: "-48% 0px -48% 0px" });
+      LEVELS.forEach(([sel, v]) => { const sec = $(sel); if (sec) { sec.dataset.fieldLevel = v; zones.observe(sec); } });
+    }
+    const progress = () => {
+      const max = root.scrollHeight - window.innerHeight;
+      return max > 0 ? clamp(window.scrollY / max, 0, 1) : 0;
+    };
+    const size = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      W = window.innerWidth; H = window.innerHeight;
+      cell = W < 700 ? 15 : 13;
+      cols = Math.ceil(W / cell) + 1; rows = Math.ceil(H / cell) + 1;
+      fieldCanvas.width = Math.round(W * dpr); fieldCanvas.height = Math.round(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      sample.width = cols; sample.height = rows;
+      request(true);
+    };
+    const paintFrame = (f, alpha) => {
+      const i = clamp(Math.floor(f), 0, SPRITE.frames - 1);
+      const sx = (i % SPRITE.cols) * SPRITE.w, sy = Math.floor(i / SPRITE.cols) * SPRITE.h;
+      const s = Math.max(cols / SPRITE.w, rows / SPRITE.h); // cover the screen like object-fit: cover
+      const dw = SPRITE.w * s, dh = SPRITE.h * s;
+      sctx.globalAlpha = alpha;
+      sctx.drawImage(sheet, sx, sy, SPRITE.w, SPRITE.h, (cols - dw) / 2, (rows - dh) / 2, dw, dh);
+    };
+    const render = (now) => {
+      raf = 0;
+      if (!ready || document.hidden) return;
+      if (!still) {
+        // a slow breathing drift keeps the field alive between scrolls
+        idle = Math.sin(now / 2600) * 1.6;
+        frame += (frameTarget - frame) * 0.1;
+        pull += (pullTarget - pull) * 0.1;
+        level += (levelTarget - level) * 0.06;
+      } else {
+        level = levelTarget;
+      }
+      const f = clamp(frame + idle, 0, SPRITE.frames - 1.001);
+      sctx.globalAlpha = 1;
+      sctx.fillStyle = "#000";
+      sctx.fillRect(0, 0, cols, rows);
+      const f0 = Math.floor(f), t = f - f0;
+      paintFrame(f0, 1);
+      if (t > 0.02) paintFrame(f0 + 1, t);
+      const px = sctx.getImageData(0, 0, cols, rows).data;
+      ctx.clearRect(0, 0, W, H);
+      const lv = level * (W < 700 ? 0.65 : 1); // phones put text over more of the screen, so go gentler
+      ctx.fillStyle = "rgba(255, 106, 61, " + (0.7 * lv).toFixed(3) + ")";
+      ctx.beginPath();
+      const maxR = cell * 0.46 * (0.55 + 0.45 * lv), reach = 180;
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+          const l = Math.min(1, (px[(y * cols + x) * 4] / 255) * 1.35);
+          let r = maxR * Math.pow(l, 1.6);
+          let cx = x * cell + cell / 2, cy = y * cell + cell / 2;
+          if (pull > 0.01) {
+            const dx = cx - mx, dy = cy - my, d = Math.sqrt(dx * dx + dy * dy);
+            if (d < reach) {
+              const k = (1 - d / reach) * pull;
+              r += maxR * 0.55 * k;
+              cx += (dx / (d || 1)) * 12 * k;
+              cy += (dy / (d || 1)) * 12 * k;
+            }
+          }
+          if (r < 0.5) continue;
+          ctx.moveTo(cx + r, cy);
+          ctx.arc(cx, cy, r, 0, 6.2832);
+        }
+      }
+      ctx.fill();
+      if (!still) request();
+    };
+    // about 30 frames a second is plenty for a background, and kinder to batteries
+    const request = (force) => {
+      if (raf || !ready) return;
+      raf = requestAnimationFrame((now) => {
+        if (!force && now - last < 32) { raf = 0; request(); return; }
+        last = now;
+        render(now);
+      });
+    };
+    sheet.onload = () => {
+      ready = true;
+      size();
+      frame = frameTarget = progress() * (SPRITE.frames - 1);
+      fieldCanvas.classList.add("is-on");
+      request(true);
+    };
+    sheet.src = SPRITE.src;
+    window.addEventListener("resize", size);
+    document.addEventListener("visibilitychange", () => request(true));
+    if (!still) {
+      window.addEventListener("scroll", () => { frameTarget = progress() * (SPRITE.frames - 1); }, { passive: true });
+      if (finePointer) {
+        window.addEventListener("pointermove", (e) => { mx = e.clientX; my = e.clientY; pullTarget = 1; }, { passive: true });
+        root.addEventListener("mouseleave", () => { pullTarget = 0; });
+      }
+    }
+  }
+
+  /* ---------- speed: real measurements of the example sites, drawn as interactive bars ---------- */
+  // Measured by Alfred's own test run (see the note under the chart). Update these numbers and the
+  // table in index.html together if you re-measure. lcp = seconds until the main content is visible,
+  // kb = everything the homepage downloads.
+  const SPEED = {
+    sites: [
+      { name: "EPS Sports Academy", lcp: 2.96, kb: 5247 },
+      { name: "Yakiniku Ichiban", lcp: 1.27, kb: 1863 },
+      { name: "Angel Club Beauty & Wellness", lcp: 0.89, kb: 631 },
+      { name: "Selangor Welding & Racking", lcp: 0.74, kb: 924 },
+      { name: "The Mimie's Catering", lcp: 0.99, kb: 1016 },
+      { name: "K&W World Engineering", lcp: 1.14, kb: 387 },
+      { name: "Safiyya Pet Shop", lcp: 1.26, kb: 1222 },
+      { name: "Sunshine Tots", lcp: 1.17, kb: 4545 },
+      { name: "H2 Fix", lcp: 1.79, kb: 505 }
+    ],
+    metrics: {
+      lcp: { caption: "median time until the main content is visible", fmt: (v) => v.toFixed(1) + " s", tick: (v) => v + " s" },
+      kb: { caption: "median page weight, everything the homepage downloads when it opens", fmt: (v) => (v / 1024).toFixed(1) + " MB", tick: (v) => (v / 1024).toFixed(0) + " MB" }
+    }
+  };
+
+  const chart = $("[data-chart]");
+  if (chart) {
+    const plot = $("[data-chart-plot]", chart);
+    const big = $("[data-chart-big]", chart);
+    const caption = $("[data-chart-caption]", chart);
+    const toggleWrap = $("[data-chart-toggle]", chart);
+    const NS = "http://www.w3.org/2000/svg";
+    const svg = (tag, attrs, text) => {
+      const n = document.createElementNS(NS, tag);
+      Object.entries(attrs || {}).forEach(([k, v]) => n.setAttribute(k, v));
+      if (text != null) n.textContent = text;
+      return n;
+    };
+    const median = (arr) => {
+      const s = arr.slice().sort((a, b) => a - b), m = Math.floor(s.length / 2);
+      return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+    };
+    // round the axis up to a tidy number with whole-unit ticks
+    const niceMax = (v, metric) => metric === "kb" ? Math.ceil(v / 1024) * 1024 : Math.ceil(v);
+    // bar with a square start on the baseline and a 4px rounded data end
+    const barPath = (y, w, h) => {
+      const r = Math.min(4, h / 2, w);
+      return "M0," + y + "H" + (w - r) + "A" + r + "," + r + " 0 0 1 " + w + "," + (y + r) + "V" + (y + h - r) + "A" + r + "," + r + " 0 0 1 " + (w - r) + "," + (y + h) + "H0Z";
+    };
+    const tip = el("div", { class: "chart__tip", "aria-hidden": "true" });
+    let metric = "lcp", shown = false, rowsEls = [];
+
+    const showTip = (row, site) => {
+      rowsEls.forEach((g) => g.classList.toggle("is-active", g === row));
+      plot.classList.add("is-hovering");
+      tip.textContent = "";
+      tip.appendChild(el("strong", { text: site.name }));
+      tip.appendChild(el("span", {}, [document.createTextNode("Main content visible"), el("b", { text: SPEED.metrics.lcp.fmt(site.lcp) })]));
+      tip.appendChild(el("span", {}, [document.createTextNode("Page weight"), el("b", { text: SPEED.metrics.kb.fmt(site.kb) })]));
+      const bar = row.querySelector(".bar").getBBox();
+      const plotW = plot.clientWidth;
+      const left = clamp(bar.x + bar.width + 14, 0, plotW - 200);
+      tip.style.left = left + "px";
+      tip.style.top = Math.max(0, bar.y - 30) + "px";
+      tip.classList.add("is-on");
+    };
+    const hideTip = () => {
+      rowsEls.forEach((g) => g.classList.remove("is-active"));
+      plot.classList.remove("is-hovering");
+      tip.classList.remove("is-on");
+    };
+
+    const draw = (animate) => {
+      const width = plot.clientWidth;
+      if (!width) return;
+      const m = SPEED.metrics[metric];
+      const sites = SPEED.sites.slice().sort((a, b) => a[metric] - b[metric]);
+      const values = sites.map((s) => s[metric]);
+      const max = niceMax(Math.max.apply(null, values), metric);
+      const med = median(values);
+      const rowH = 46, top = 30, bottom = 28, barH = 10, valueW = 70;
+      const innerW = Math.max(120, width - valueW);
+      const xs = (v) => (v / max) * innerW;
+      const height = top + sites.length * rowH + bottom;
+      const s = svg("svg", { viewBox: "0 0 " + width + " " + height, width: width, height: height, role: "img", "aria-label": "Bar chart of " + m.caption + " for the nine example sites" });
+
+      // recessive grid with whole-unit ticks along the bottom
+      const grid = svg("g", { class: "chart__grid", "aria-hidden": "true" });
+      const step = metric === "kb" ? 1024 : 1;
+      for (let v = 0; v <= max + 0.0001; v += step) {
+        const x = Math.round(xs(v)) + 0.5;
+        grid.appendChild(svg("line", { x1: x, x2: x, y1: top - 6, y2: height - bottom + 4 }));
+        grid.appendChild(svg("text", { x: x, y: height - 8, "text-anchor": v === 0 ? "start" : "middle" }, m.tick(v)));
+      }
+      s.appendChild(grid);
+
+      // dashed median line, the number in the big headline
+      const mx = Math.round(xs(med)) + 0.5;
+      const medG = svg("g", { class: "chart__median", "aria-hidden": "true" });
+      medG.appendChild(svg("line", { x1: mx, x2: mx, y1: top - 10, y2: height - bottom }));
+      medG.appendChild(svg("text", { x: mx + 6, y: top - 14 }, "Median " + m.fmt(med)));
+      s.appendChild(medG);
+
+      rowsEls = [];
+      sites.forEach((site, i) => {
+        const y = top + i * rowH;
+        const w = Math.max(2, xs(site[metric]));
+        const g = svg("g", { class: "chart__row", tabindex: "0", role: "listitem", "aria-label": site.name + ": " + SPEED.metrics.lcp.fmt(site.lcp) + " until the main content is visible, " + SPEED.metrics.kb.fmt(site.kb) + " page weight" });
+        g.appendChild(svg("rect", { class: "hit", x: 0, y: y - 4, width: width, height: rowH - 2 }));
+        g.appendChild(svg("text", { class: "name", x: 0, y: y + 12 }, site.name));
+        const bar = svg("path", { class: "bar", d: barPath(y + 20, w, barH) });
+        g.appendChild(bar);
+        const val = svg("text", { class: "val", x: w + 8, y: y + 29 }, m.fmt(site[metric]));
+        g.appendChild(val);
+        if (animate && !reduceMotion) {
+          // grow from the baseline, one after another
+          bar.style.transformBox = "fill-box";
+          bar.style.transformOrigin = "left center";
+          bar.style.transform = "scaleX(0)";
+          bar.style.transition = "transform 1.1s cubic-bezier(.16, 1, .3, 1) " + (i * 70) + "ms";
+          val.style.opacity = "0";
+          val.style.transition = "opacity .5s ease " + (400 + i * 70) + "ms";
+          requestAnimationFrame(() => requestAnimationFrame(() => { bar.style.transform = "scaleX(1)"; val.style.opacity = "1"; }));
+        }
+        g.addEventListener("pointerenter", () => showTip(g, site));
+        g.addEventListener("focus", () => showTip(g, site));
+        g.addEventListener("blur", hideTip);
+        g.addEventListener("click", () => showTip(g, site));
+        rowsEls.push(g);
+        s.appendChild(g);
+      });
+      s.setAttribute("role", "list");
+      s.addEventListener("pointerleave", hideTip);
+
+      plot.textContent = "";
+      plot.appendChild(s);
+      plot.appendChild(tip);
+      big.textContent = m.fmt(med);
+      caption.textContent = m.caption + ", across the nine example sites";
+    };
+
+    const setMetric = (next) => {
+      metric = next;
+      $$("[data-metric]", chart).forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.metric === metric)));
+      hideTip();
+      draw(true);
+    };
+    $$("[data-metric]", chart).forEach((b) => b.addEventListener("click", () => setMetric(b.dataset.metric)));
+    if (toggleWrap) toggleWrap.hidden = false;
+    chart.classList.add("is-live");
+    draw(false);
+
+    // bars grow in the first time the chart comes into view
+    if ("IntersectionObserver" in window && !reduceMotion) {
+      const io = new IntersectionObserver((entries) => {
+        if (!entries.some((en) => en.isIntersecting)) return;
+        io.disconnect();
+        shown = true;
+        draw(true);
+      }, { threshold: 0.35 });
+      io.observe(chart);
+    }
+    // redraw whenever the chart's own width changes (window resize, or the first time it gets a size)
+    let resizeTimer = 0, lastW = plot.clientWidth;
+    const redraw = () => {
+      if (plot.clientWidth === lastW && plot.querySelector("svg")) return;
+      lastW = plot.clientWidth;
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => draw(false), 120);
+    };
+    if ("ResizeObserver" in window) new ResizeObserver(redraw).observe(plot);
+    else window.addEventListener("resize", redraw);
   }
 
   /* ---------- footer year ---------- */
@@ -459,7 +941,7 @@
       if (note && t && (!t.value.trim() || t.dataset.auto)) { t.value = note; t.dataset.auto = "1"; }
       update();
       const first = ["name", "phone", "text"].map(field).find((f) => f && !f.value.trim());
-      if (first) setTimeout(() => first.focus({ preventScroll: true }), reduceMotion ? 0 : 900);
+      if (first) setTimeout(() => first.focus({ preventScroll: true }), reduceMotion ? 0 : 700);
     };
 
     form.addEventListener("submit", (e) => {
@@ -525,6 +1007,7 @@
     const Q = HELPER.questions;
     let answers = {};
     let step = 0;
+
     const suggest = (a) => {
       const web = a.site === "none" ? "new" : a.site === "weak" ? "redesign" : "";
       const social = a.post !== "often";
@@ -536,8 +1019,10 @@
         note: HELPER.note.site[a.site] + ", " + HELPER.note.find[a.find] + ", and " + HELPER.note.post[a.post] + "."
       };
     };
+
     const progress = (done) => el("div", { class: "helper__progress", "aria-hidden": "true" },
       Q.map((_, i) => el("span", { class: i < done ? "is-done" : "" })));
+
     const render = (moveFocus) => {
       helperPanel.textContent = "";
       let target;
@@ -573,11 +1058,12 @@
       }
       if (moveFocus && target) target.focus({ preventScroll: true });
     };
+
     helper.hidden = false;
     render(false);
   }
 
-  /* ---------- social: example caption in three languages ---------- */
+  /* ---------- social tile: example caption in three languages ---------- */
   const sample = $("[data-sample]");
   if (sample) {
     const langButtons = $$("[data-lang]", sample);
@@ -639,6 +1125,7 @@
       }
       lastType = s.type;
     };
+
     // the phone's clock shows Kuala Lumpur time, like the intro
     const clock = $("[data-mock-time]", mock);
     const tick = () => {
@@ -647,6 +1134,7 @@
       } catch (_) { /* keep the placeholder */ }
     };
     if (clock) { tick(); setInterval(tick, 30000); }
+
     const go = $("[data-builder-go]", builder);
     if (go) go.addEventListener("click", () => {
       const s = state(), t = TYPES[s.type];
@@ -658,6 +1146,7 @@
           : "I run a " + t.label + " in " + s.area + ".")
       });
     });
+
     builder.addEventListener("input", paint);
     builder.addEventListener("change", paint);
     builder.hidden = false;

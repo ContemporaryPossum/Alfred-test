@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Alfred Wong Kai Xiang | Freelance Website Designer and Social Media Marketer, Klang</title>
   <meta name="description" content="Freelance website designer and social media marketer in Klang, Selangor. Clear, fast websites and social media content for small businesses across Klang, Shah Alam, Subang and Setia Alam.">
-  <meta name="theme-color" content="#0f0e0c">
+  <meta name="theme-color" content="#0b0c0f">
   <meta name="color-scheme" content="dark">
 
   <!-- Live address. If you move to a custom domain, replace every https://portfolio.alfredwkxuk.workers.dev in this file. -->
@@ -32,7 +32,9 @@
   <link rel="stylesheet" href="styles.css">
   <noscript><style>
     .intro { display: none; }
-    [data-rise], .hero__frame, .rv { opacity: 1; transform: none; animation: none; clip-path: none; }
+    .hero [data-rise], .hero__media, .float { opacity: 1; animation: none; transform: none; }
+    .reveal, .reveal:not(.no-blur) { opacity: 1; transform: none; filter: none; clip-path: none; }
+    .steps__item { opacity: 1; transform: none; }
   </style></noscript>
 
   <script type="application/ld+json">
@@ -60,22 +62,32 @@
 <body>
   <a class="skip" href="#main">Skip to content</a>
   <div class="nav-sentinel" data-nav-sentinel aria-hidden="true"></div>
+  <div class="cursor" data-cursor aria-hidden="true"><span class="cursor__label" data-cursor-label></span></div>
+  <!--
+    FIELD: a background drawn from an abstract video, turned into a field of tangerine dots.
+    The frames live in field-sprite.webp; main.js picks the frame from how far you have scrolled,
+    and the dots near the mouse swell and move aside. Decorative only.
+  -->
+  <canvas class="field" data-field aria-hidden="true"></canvas>
 
   <!--
-    INTRO: the site speaks to the visitor before the hero appears.
-    Lines are written in main.js from what the browser already knows (device, screen width, Kuala Lumpur time).
-    Plays once per visit, can be skipped with a click, tap, Esc, Enter or space, and is skipped for reduced motion.
+    INTRO: the site addresses the visitor directly before the hero appears.
+    Lines are written in main.js from what the browser already knows (screen width, device type,
+    Kuala Lumpur time). Plays once per visit, can be skipped with a click, tap, Esc, Enter or space,
+    and is skipped entirely for visitors who prefer reduced motion.
   -->
   <div class="intro" data-intro aria-hidden="true">
     <div class="intro__plate intro__plate--top"></div>
     <div class="intro__plate intro__plate--bottom"></div>
-    <div class="intro__text"><p class="intro__line" data-intro-line></p></div>
+    <div class="intro__text">
+      <p class="intro__line" data-intro-line></p>
+    </div>
     <button class="intro__skip" type="button" data-intro-skip>Skip</button>
   </div>
 
   <header class="nav" data-nav>
     <div class="wrap nav__inner">
-      <a class="brand" href="#top" aria-label="Alfred Wong, back to top">Alfred Wong</a>
+      <a class="brand" href="#top" aria-label="Alfred Wong, back to top"><span class="brand__dot" aria-hidden="true"></span>Alfred Wong</a>
       <nav class="nav__links" aria-label="Primary">
         <a href="#work">Work</a>
         <a href="#services">Services</a>
@@ -104,269 +116,283 @@
   </header>
 
   <main id="main">
-    <!-- HERO: on scroll the words drift up and the portrait settles back -->
+    <!-- HERO -->
     <section class="hero" id="top">
-      <div class="wrap hero__grid">
+      <div class="wrap hero__layout">
         <div class="hero__copy">
+          <p class="eyebrow hero__eyebrow" data-rise style="--r: 0">Alfred Wong Kai Xiang</p>
           <h1 class="hero__title" data-split data-accent="customers">Websites and social media that bring in customers.</h1>
-          <div class="hero__foot">
-            <p class="hero__sub" data-rise style="--r: 1">Freelance website designer and social media marketer in Klang, Selangor. Clear, fast websites and content for small businesses.</p>
-            <div class="hero__actions" data-rise style="--r: 2">
-              <a class="btn btn--primary btn--lg" href="#contact" data-magnetic>Start a project</a>
-              <a class="btn btn--ghost btn--lg" href="#work">See the work</a>
-            </div>
+          <p class="hero__sub" data-rise style="--r: 6">Freelance website designer and social media marketer in Klang, Selangor. Clear, fast websites and content for small businesses.</p>
+          <div class="hero__actions" data-rise style="--r: 7">
+            <a class="btn btn--primary btn--lg" href="#contact" data-magnetic>Start a project</a>
+            <a class="btn btn--ghost btn--lg" href="#work">See the work</a>
           </div>
+          <ul class="hero__facts" data-rise style="--r: 8">
+            <li><strong>20+</strong> websites built</li>
+            <li>English, Malay and Mandarin</li>
+            <li>I reply personally on WhatsApp</li>
+          </ul>
         </div>
-        <figure class="hero__media">
-          <div class="hero__frame">
-            <img src="alfred-about.webp" width="960" height="1280" alt="Alfred Wong Kai Xiang, freelance website designer and social media marketer" fetchpriority="high" decoding="async">
-            <video src="alfred-loop.mp4" poster="alfred-about.webp" autoplay muted loop playsinline preload="auto" aria-hidden="true" tabindex="-1" data-autovideo></video>
+
+        <div class="hero__media" data-hero-media>
+          <div class="hero__frame" data-tilt-soft>
+            <img class="hero__still" src="alfred-about.webp" width="960" height="1280" alt="Alfred Wong Kai Xiang, freelance website designer and social media marketer" fetchpriority="high" decoding="async">
+            <video class="hero__video" src="alfred-loop.mp4" poster="alfred-about.webp" autoplay muted loop playsinline preload="auto" aria-hidden="true" tabindex="-1" data-autovideo></video>
+            <span class="hero__frame-shine" aria-hidden="true"></span>
           </div>
+
+          <!-- floating pieces of real client work around the portrait -->
+          <div class="float float--phone" aria-hidden="true" data-depth="1.2">
+            <img src="eps-mobile.webp" width="360" height="800" alt="" decoding="async">
+          </div>
+          <div class="float float--browser" aria-hidden="true" data-depth="0.7">
+            <span class="float__bar"><i></i><i></i><i></i></span>
+            <img src="yakiniku-desktop.webp" width="1600" height="900" alt="" decoding="async">
+          </div>
+          <div class="float float--chip" aria-hidden="true" data-depth="1.6">
+            <span class="pulse"></span><span><strong>20+ websites</strong> built</span>
+          </div>
+
           <p class="hero__bubble" data-bubble role="status" aria-live="polite"></p>
-        </figure>
+        </div>
       </div>
+      <a class="hero__scroll" href="#proof" aria-label="Scroll to the work"><span></span></a>
     </section>
 
-    <!-- STATEMENT: the words light up as you scroll past them; the names below slide with your scrolling -->
-    <section class="statement" aria-label="What I do">
-      <div class="wrap">
-        <p class="statement__text" data-scrub-words>More than 20 websites for restaurants, workshops, clinics, shops, preschools and sports academies. Each one designed, written and built by me, then looked after once it is live.</p>
-      </div>
-      <div class="ticker" data-ticker aria-label="Some of the businesses I have built websites for">
-        <div class="ticker__track">
+    <!-- PROOF: clients marquee and real numbers -->
+    <section class="proof" id="proof" aria-label="Clients and numbers">
+      <p class="wrap proof__label">Websites designed and built for</p>
+      <div class="marquee" data-marquee>
+        <div class="marquee__track" data-speed="1">
           <span>EPS Sports Academy</span>
-          <span>Yakiniku Ichiban</span>
           <span>Selangor Welding &amp; Racking</span>
           <span>The Mimie's Catering</span>
-          <span>K&amp;W World Engineering</span>
           <span>Safiyya Pet Shop</span>
-          <span>Sunshine Tots</span>
           <span>H2 Fix</span>
+          <span>K&amp;W World Engineering</span>
+          <span>Yakiniku Ichiban</span>
+          <span>Sunshine Tots</span>
           <span>Angel Club Beauty &amp; Wellness</span>
         </div>
       </div>
-    </section>
-
-    <!-- WORK: on desktop the section holds still and your scrolling slides the projects sideways; on phones you swipe -->
-    <section class="work" id="work">
-      <div class="wrap work__head">
-        <h2 class="rv-words">A few of the 20+ websites I have built.</h2>
-        <p class="lead rv">From a welding workshop in Klang to a sports academy in Kuala Lumpur and a yakiniku restaurant in Kuching. Each one designed, written and built by me. <span class="hint-fine">Rest on a preview to scroll through the whole page.</span></p>
+      <div class="marquee marquee--alt" data-marquee aria-hidden="true">
+        <div class="marquee__track" data-speed="-0.7">
+          <span>Kids sports academy</span>
+          <span>Welding workshop</span>
+          <span>Catering</span>
+          <span>Pet shop</span>
+          <span>Phone repair</span>
+          <span>Electrical contractor</span>
+          <span>Japanese BBQ</span>
+          <span>Preschool</span>
+          <span>Spa and boutique</span>
+        </div>
       </div>
 
-      <div class="pan" data-pan>
-        <div class="pan__view" data-pan-view>
-          <ol class="pan__track" data-pan-track>
-            <li class="wcard" style="--tone: #a6d13b" data-full="eps-full.webp">
-              <a class="wcard__link" href="https://epssportsacademy.alfredwkxuk.workers.dev/" target="_blank" rel="noopener">
-                <span class="wcard__shot">
-                  <span class="wcard__screen"><img class="wcard__img" src="eps-desktop.webp" width="1600" height="900" alt="EPS Sports Academy website, hero with kids playing football and swimming" loading="lazy" decoding="async"></span>
-                  <span class="wcard__phone"><img src="eps-mobile.webp" width="360" height="800" alt="" loading="lazy" decoding="async"></span>
+      <div class="wrap stats">
+        <div class="stat reveal">
+          <p class="stat__num"><span data-count="20" data-suffix="+">20+</span></p>
+          <p class="stat__text">websites built for small businesses, each one designed, written and built by me</p>
+        </div>
+        <div class="stat reveal" style="--d: .08s">
+          <p class="stat__num"><span data-count="3">3</span></p>
+          <p class="stat__text">languages for copy and captions: English, Malay and Mandarin</p>
+        </div>
+        <div class="stat reveal" style="--d: .24s">
+          <p class="stat__num"><span data-count="1">1</span></p>
+          <p class="stat__text">person from the first call to launch, and every update after</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- WORK: on desktop the cards slide sideways as you scroll; on phones you swipe -->
+    <section class="work" id="work">
+      <div class="wrap work__head">
+        <header class="section-head reveal">
+          <p class="eyebrow">Selected work</p>
+          <h2 data-words>Nine of my 20+ websites, nine very different businesses.</h2>
+          <p class="section-head__sub">From a welding workshop in Klang to a sports academy in Kuala Lumpur and a yakiniku restaurant in Kuching. Each one designed, written and built by me. <span class="hint-fine">Rest on a preview to scroll through the page, and click to visit the live site.</span><span class="hint-touch">Swipe to browse, and tap to visit the live site.</span></p>
+        </header>
+        <div class="work__count" aria-hidden="true"><span data-reel-index>01</span> / <span>09</span></div>
+      </div>
+
+      <div class="reel" data-reel>
+        <div class="reel__viewport" data-reel-viewport>
+          <ol class="reel__track" data-reel-track>
+            <li class="card" style="--tone: #a6d13b" data-full="eps-full.webp">
+              <a class="card__shot" href="https://epssportsacademy.alfredwkxuk.workers.dev/" target="_blank" rel="noopener" data-cursor-text="Visit">
+                <span class="card__browser">
+                  <span class="card__bar"><span class="card__dots"><i></i><i></i><i></i></span><span class="card__url">epssportsacademy.alfredwkxuk.workers.dev</span></span>
+                  <span class="card__screen"><img class="card__img" src="eps-desktop.webp" width="1600" height="900" alt="EPS Sports Academy website, hero with kids playing football and swimming" loading="lazy" decoding="async"></span>
                 </span>
-                <span class="wcard__info">
-                  <span class="wcard__name">EPS Sports Academy</span>
-                  <span class="wcard__meta">Kids football and swimming academy<br>Kuala Lumpur and Petaling Jaya</span>
-                </span>
+                <span class="card__phone"><img src="eps-mobile.webp" width="360" height="800" alt="" loading="lazy" decoding="async"></span>
               </a>
+              <div class="card__info">
+                <h3 class="card__name">EPS Sports Academy</h3>
+                <p class="card__meta">Kids football and swimming academy <span>Kuala Lumpur and Petaling Jaya</span></p>
+              </div>
             </li>
-            <li class="wcard" style="--tone: #c53030" data-full="yakiniku-full.webp">
-              <a class="wcard__link" href="https://yakiniku-ichiban.alfredwkxuk.workers.dev/" target="_blank" rel="noopener">
-                <span class="wcard__shot">
-                  <span class="wcard__screen"><img class="wcard__img" src="yakiniku-desktop.webp" width="1600" height="900" alt="Yakiniku Ichiban website, hero section with wagyu grilling over charcoal" loading="lazy" decoding="async"></span>
-                  <span class="wcard__phone"><img src="yakiniku-mobile.webp" width="360" height="800" alt="" loading="lazy" decoding="async"></span>
+            <li class="card" style="--tone: #c53030" data-full="yakiniku-full.webp">
+              <a class="card__shot" href="https://yakiniku-ichiban.alfredwkxuk.workers.dev/" target="_blank" rel="noopener" data-cursor-text="Visit">
+                <span class="card__browser">
+                  <span class="card__bar"><span class="card__dots"><i></i><i></i><i></i></span><span class="card__url">yakiniku-ichiban.alfredwkxuk.workers.dev</span></span>
+                  <span class="card__screen"><img class="card__img" src="yakiniku-desktop.webp" width="1600" height="900" alt="Yakiniku Ichiban website, hero section with wagyu grilling over charcoal" loading="lazy" decoding="async"></span>
                 </span>
-                <span class="wcard__info">
-                  <span class="wcard__name">Yakiniku Ichiban</span>
-                  <span class="wcard__meta">Japanese BBQ restaurant<br>Kuching, Sarawak</span>
-                </span>
+                <span class="card__phone"><img src="yakiniku-mobile.webp" width="360" height="800" alt="" loading="lazy" decoding="async"></span>
               </a>
+              <div class="card__info">
+                <h3 class="card__name">Yakiniku Ichiban</h3>
+                <p class="card__meta">Japanese BBQ restaurant <span>Kuching, Sarawak</span></p>
+              </div>
             </li>
-            <li class="wcard" style="--tone: #c5a070" data-full="angelclub-full.webp">
-              <a class="wcard__link" href="https://angelclub.alfredwkxuk.workers.dev/" target="_blank" rel="noopener">
-                <span class="wcard__shot">
-                  <span class="wcard__screen"><img class="wcard__img" src="angelclub-desktop.webp" width="1600" height="900" alt="Angel Club Beauty and Wellness website, spa hero section" loading="lazy" decoding="async"></span>
-                  <span class="wcard__phone"><img src="angelclub-mobile.webp" width="360" height="800" alt="" loading="lazy" decoding="async"></span>
+            <li class="card" style="--tone: #c5a070" data-full="angelclub-full.webp">
+              <a class="card__shot" href="https://angelclub.alfredwkxuk.workers.dev/" target="_blank" rel="noopener" data-cursor-text="Visit">
+                <span class="card__browser">
+                  <span class="card__bar"><span class="card__dots"><i></i><i></i><i></i></span><span class="card__url">angelclub.alfredwkxuk.workers.dev</span></span>
+                  <span class="card__screen"><img class="card__img" src="angelclub-desktop.webp" width="1600" height="900" alt="Angel Club Beauty and Wellness website, spa hero section" loading="lazy" decoding="async"></span>
                 </span>
-                <span class="wcard__info">
-                  <span class="wcard__name">Angel Club Beauty &amp; Wellness</span>
-                  <span class="wcard__meta">Spa and fashion boutique<br>Taman Bayu Perdana, Klang</span>
-                </span>
+                <span class="card__phone"><img src="angelclub-mobile.webp" width="360" height="800" alt="" loading="lazy" decoding="async"></span>
               </a>
+              <div class="card__info">
+                <h3 class="card__name">Angel Club Beauty &amp; Wellness</h3>
+                <p class="card__meta">Spa and fashion boutique <span>Taman Bayu Perdana, Klang</span></p>
+              </div>
             </li>
-            <li class="wcard" style="--tone: #3b82f6" data-full="swr-full.webp">
-              <a class="wcard__link" href="https://selangorwielding-racking.alfredwkxuk.workers.dev/" target="_blank" rel="noopener">
-                <span class="wcard__shot">
-                  <span class="wcard__screen"><img class="wcard__img" src="swr-desktop.webp" width="1600" height="900" alt="Selangor Welding and Racking website, industrial hero with welder" loading="lazy" decoding="async"></span>
-                  <span class="wcard__phone"><img src="swr-mobile.webp" width="360" height="800" alt="" loading="lazy" decoding="async"></span>
+            <li class="card" style="--tone: #3b82f6" data-full="swr-full.webp">
+              <a class="card__shot" href="https://selangorwielding-racking.alfredwkxuk.workers.dev/" target="_blank" rel="noopener" data-cursor-text="Visit">
+                <span class="card__browser">
+                  <span class="card__bar"><span class="card__dots"><i></i><i></i><i></i></span><span class="card__url">selangorwielding-racking.alfredwkxuk.workers.dev</span></span>
+                  <span class="card__screen"><img class="card__img" src="swr-desktop.webp" width="1600" height="900" alt="Selangor Welding and Racking website, industrial hero with welder" loading="lazy" decoding="async"></span>
                 </span>
-                <span class="wcard__info">
-                  <span class="wcard__name">Selangor Welding &amp; Racking</span>
-                  <span class="wcard__meta">Welding, racking and steel works<br>Taman Eng Ann, Klang</span>
-                </span>
+                <span class="card__phone"><img src="swr-mobile.webp" width="360" height="800" alt="" loading="lazy" decoding="async"></span>
               </a>
+              <div class="card__info">
+                <h3 class="card__name">Selangor Welding &amp; Racking</h3>
+                <p class="card__meta">Welding, racking and steel works <span>Taman Eng Ann, Klang</span></p>
+              </div>
             </li>
-            <li class="wcard" style="--tone: #c9962e" data-full="mimies-full.webp">
-              <a class="wcard__link" href="https://themimiess.com/" target="_blank" rel="noopener">
-                <span class="wcard__shot">
-                  <span class="wcard__screen"><img class="wcard__img" src="mimies-desktop.webp" width="1600" height="900" alt="The Mimie's Catering website, hero with a buffet spread" loading="lazy" decoding="async"></span>
-                  <span class="wcard__phone"><img src="mimies-mobile.webp" width="360" height="800" alt="" loading="lazy" decoding="async"></span>
+            <li class="card" style="--tone: #c9962e" data-full="mimies-full.webp">
+              <a class="card__shot" href="https://themimiess.com/" target="_blank" rel="noopener" data-cursor-text="Visit">
+                <span class="card__browser">
+                  <span class="card__bar"><span class="card__dots"><i></i><i></i><i></i></span><span class="card__url">themimiess.com</span></span>
+                  <span class="card__screen"><img class="card__img" src="mimies-desktop.webp" width="1600" height="900" alt="The Mimie's Catering website, hero with a buffet spread" loading="lazy" decoding="async"></span>
                 </span>
-                <span class="wcard__info">
-                  <span class="wcard__name">The Mimie's Catering &amp; Food Delivery</span>
-                  <span class="wcard__meta">Catering and food delivery<br>Selayang, Batu Caves</span>
-                </span>
+                <span class="card__phone"><img src="mimies-mobile.webp" width="360" height="800" alt="" loading="lazy" decoding="async"></span>
               </a>
+              <div class="card__info">
+                <h3 class="card__name">The Mimie's Catering &amp; Food Delivery</h3>
+                <p class="card__meta">Catering and food delivery <span>Selayang, Batu Caves</span></p>
+              </div>
             </li>
-            <li class="wcard" style="--tone: #fbbf24" data-full="kw-full.webp">
-              <a class="wcard__link" href="https://k-wworldengineering.alfredwkxuk.workers.dev/" target="_blank" rel="noopener">
-                <span class="wcard__shot">
-                  <span class="wcard__screen"><img class="wcard__img" src="kw-desktop.webp" width="1600" height="900" alt="K and W World Engineering website, electrical contractor hero" loading="lazy" decoding="async"></span>
-                  <span class="wcard__phone"><img src="kw-mobile.webp" width="360" height="800" alt="" loading="lazy" decoding="async"></span>
+            <li class="card" style="--tone: #fbbf24" data-full="kw-full.webp">
+              <a class="card__shot" href="https://k-wworldengineering.alfredwkxuk.workers.dev/" target="_blank" rel="noopener" data-cursor-text="Visit">
+                <span class="card__browser">
+                  <span class="card__bar"><span class="card__dots"><i></i><i></i><i></i></span><span class="card__url">k-wworldengineering.alfredwkxuk.workers.dev</span></span>
+                  <span class="card__screen"><img class="card__img" src="kw-desktop.webp" width="1600" height="900" alt="K and W World Engineering website, electrical contractor hero" loading="lazy" decoding="async"></span>
                 </span>
-                <span class="wcard__info">
-                  <span class="wcard__name">K&amp;W World Engineering</span>
-                  <span class="wcard__meta">Licensed electrical contractor<br>Kepong, Kuala Lumpur</span>
-                </span>
+                <span class="card__phone"><img src="kw-mobile.webp" width="360" height="800" alt="" loading="lazy" decoding="async"></span>
               </a>
+              <div class="card__info">
+                <h3 class="card__name">K&amp;W World Engineering</h3>
+                <p class="card__meta">Licensed electrical contractor <span>Kepong, Kuala Lumpur</span></p>
+              </div>
             </li>
-            <li class="wcard" style="--tone: #d1784b" data-full="safiyya-full.webp">
-              <a class="wcard__link" href="https://safiyya.alfredwkxuk.workers.dev/" target="_blank" rel="noopener">
-                <span class="wcard__shot">
-                  <span class="wcard__screen"><img class="wcard__img" src="safiyya-desktop.webp" width="1600" height="900" alt="Safiyya Pet Shop website, hero with a cat on the shop counter" loading="lazy" decoding="async"></span>
-                  <span class="wcard__phone"><img src="safiyya-mobile.webp" width="360" height="800" alt="" loading="lazy" decoding="async"></span>
+            <li class="card" style="--tone: #d1784b" data-full="safiyya-full.webp">
+              <a class="card__shot" href="https://safiyya.alfredwkxuk.workers.dev/" target="_blank" rel="noopener" data-cursor-text="Visit">
+                <span class="card__browser">
+                  <span class="card__bar"><span class="card__dots"><i></i><i></i><i></i></span><span class="card__url">safiyya.alfredwkxuk.workers.dev</span></span>
+                  <span class="card__screen"><img class="card__img" src="safiyya-desktop.webp" width="1600" height="900" alt="Safiyya Pet Shop website, hero with a cat on the shop counter" loading="lazy" decoding="async"></span>
                 </span>
-                <span class="wcard__info">
-                  <span class="wcard__name">Safiyya Pet Shop</span>
-                  <span class="wcard__meta">Pet food and supplies<br>Bandar Bestari, Klang</span>
-                </span>
+                <span class="card__phone"><img src="safiyya-mobile.webp" width="360" height="800" alt="" loading="lazy" decoding="async"></span>
               </a>
+              <div class="card__info">
+                <h3 class="card__name">Safiyya Pet Shop</h3>
+                <p class="card__meta">Pet food and supplies <span>Bandar Bestari, Klang</span></p>
+              </div>
             </li>
-            <li class="wcard" style="--tone: #f2c230" data-full="sunshinetots-full.webp">
-              <a class="wcard__link" href="https://sunshinetots.alfredwkxuk.workers.dev/" target="_blank" rel="noopener">
-                <span class="wcard__shot">
-                  <span class="wcard__screen"><img class="wcard__img" src="sunshinetots-desktop.webp" width="1600" height="900" alt="Sunshine Tots website, photo gallery of children at the centre" loading="lazy" decoding="async"></span>
-                  <span class="wcard__phone"><img src="sunshinetots-mobile.webp" width="360" height="800" alt="" loading="lazy" decoding="async"></span>
+            <li class="card" style="--tone: #f2c230" data-full="sunshinetots-full.webp">
+              <a class="card__shot" href="https://sunshinetots.alfredwkxuk.workers.dev/" target="_blank" rel="noopener" data-cursor-text="Visit">
+                <span class="card__browser">
+                  <span class="card__bar"><span class="card__dots"><i></i><i></i><i></i></span><span class="card__url">sunshinetots.alfredwkxuk.workers.dev</span></span>
+                  <span class="card__screen"><img class="card__img" src="sunshinetots-desktop.webp" width="1600" height="900" alt="Sunshine Tots website, photo gallery of children at the centre" loading="lazy" decoding="async"></span>
                 </span>
-                <span class="wcard__info">
-                  <span class="wcard__name">Sunshine Tots + Tadika Si Cahaya</span>
-                  <span class="wcard__meta">Childcare and preschool<br>Kota Kemuning, Shah Alam</span>
-                </span>
+                <span class="card__phone"><img src="sunshinetots-mobile.webp" width="360" height="800" alt="" loading="lazy" decoding="async"></span>
               </a>
+              <div class="card__info">
+                <h3 class="card__name">Sunshine Tots + Tadika Si Cahaya</h3>
+                <p class="card__meta">Childcare and preschool <span>Kota Kemuning, Shah Alam</span></p>
+              </div>
             </li>
-            <li class="wcard" style="--tone: #25d366" data-full="h2fix-full.webp">
-              <a class="wcard__link" href="https://h2fix.alfredwkxuk.workers.dev/" target="_blank" rel="noopener">
-                <span class="wcard__shot">
-                  <span class="wcard__screen"><img class="wcard__img" src="h2fix-desktop.webp" width="1600" height="900" alt="H2 Fix website, dark tech hero with phones" loading="lazy" decoding="async"></span>
-                  <span class="wcard__phone"><img src="h2fix-mobile.webp" width="360" height="800" alt="" loading="lazy" decoding="async"></span>
+            <li class="card" style="--tone: #25d366" data-full="h2fix-full.webp">
+              <a class="card__shot" href="https://h2fix.alfredwkxuk.workers.dev/" target="_blank" rel="noopener" data-cursor-text="Visit">
+                <span class="card__browser">
+                  <span class="card__bar"><span class="card__dots"><i></i><i></i><i></i></span><span class="card__url">h2fix.alfredwkxuk.workers.dev</span></span>
+                  <span class="card__screen"><img class="card__img" src="h2fix-desktop.webp" width="1600" height="900" alt="H2 Fix website, dark tech hero with phones" loading="lazy" decoding="async"></span>
                 </span>
-                <span class="wcard__info">
-                  <span class="wcard__name">H2 Fix</span>
-                  <span class="wcard__meta">Phone repair, in Malay<br>Klang</span>
-                </span>
+                <span class="card__phone"><img src="h2fix-mobile.webp" width="360" height="800" alt="" loading="lazy" decoding="async"></span>
               </a>
+              <div class="card__info">
+                <h3 class="card__name">H2 Fix</h3>
+                <p class="card__meta">Phone repair, in Malay <span>Klang</span></p>
+              </div>
             </li>
-            <li class="wcard wcard--end">
-              <div class="wcard__end">
-                <p class="wcard__end-title">Your business could be next.</p>
+            <li class="card card--next">
+              <div class="card__next">
+                <h3>Your business could be next.</h3>
                 <p>Tell me what you do and I will show you what your website could look like.</p>
-                <div class="wcard__end-actions">
+                <div class="card__next-actions">
                   <a class="btn btn--primary" href="#contact">Start a project</a>
                   <a class="btn btn--ghost" href="#yours">Picture yours first</a>
                 </div>
               </div>
             </li>
           </ol>
-          <div class="pan__bar" aria-hidden="true"><span data-pan-bar></span></div>
         </div>
-        <div class="wrap pan__nav" data-pan-nav hidden>
-          <button class="pan__btn" type="button" data-pan-prev aria-label="Previous project"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-          <button class="pan__btn" type="button" data-pan-next aria-label="Next project"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-        </div>
+        <div class="wrap reel__rail" aria-hidden="true"><span data-reel-bar></span></div>
       </div>
     </section>
 
-    <!-- SERVICES: the website screenshot scrolls with your page; the Reel phone tilts as it passes -->
-    <section class="services" id="services">
-      <div class="wrap">
-        <header class="services__head">
-          <h2 class="rv-words">Two things, done properly.</h2>
-          <p class="lead rv">A website that earns trust, and the social media that keeps people coming back to it. Take one or both.</p>
+    <!--
+      SPEED: real measurements of the nine example sites, drawn as an interactive bar chart.
+      The numbers live in main.js (search for SPEED) and in the table below, which is what
+      visitors without JavaScript and screen reader users get. Update both if you re-measure.
+    -->
+    <section class="speed" id="speed" aria-labelledby="speed-title">
+      <div class="wrap speed__grid">
+        <header class="section-head speed__head reveal">
+          <h2 id="speed-title" data-words>Fast on a real phone, not just on my laptop.</h2>
+          <p class="section-head__sub">I loaded each example site the way a customer on mobile data sees it: a phone-sized screen on a 4G connection, three times each. Hover or tap a bar for the numbers.</p>
         </header>
-
-        <article class="svc svc--web">
-          <div class="svc__text rv">
-            <h3>Website design and build</h3>
-            <p>A website you own outright, with no monthly builder fees. Mobile-first, quick to load, and written to turn visitors into enquiries. After launch I keep it updated for you.</p>
-            <ul class="svc__list" aria-label="What is included">
-              <li>Custom design</li>
-              <li>Copywriting</li>
-              <li>WhatsApp and call buttons</li>
-              <li>Google Maps and reviews</li>
-              <li>Domain and hosting setup</li>
-              <li>Search-friendly structure</li>
-              <li>Ongoing updates by WhatsApp</li>
-            </ul>
-          </div>
-          <div class="svc__visual" aria-hidden="true">
-            <div class="svc__screen"><img src="angelclub-full.webp" width="1200" height="4852" alt="" loading="lazy" decoding="async"></div>
-            <div class="svc__phone"><img src="h2fix-mobile.webp" width="360" height="800" alt="" loading="lazy" decoding="async"></div>
-          </div>
-        </article>
-
-        <article class="svc svc--social">
-          <div class="svc__visual" aria-hidden="true">
-            <div class="reelphone">
-              <img src="alfred-reel.webp" width="720" height="1280" alt="" loading="lazy" decoding="async">
-              <video muted loop playsinline preload="none" poster="alfred-reel.webp" data-src="alfred-reel.mp4" data-lazyvideo tabindex="-1"></video>
+        <div class="chart reveal no-blur" data-chart>
+          <div class="chart__head">
+            <div class="chart__summary">
+              <p class="chart__big" data-chart-big></p>
+              <p class="chart__caption" data-chart-caption></p>
+            </div>
+            <div class="chart__toggle" role="group" aria-label="What to show" data-chart-toggle hidden>
+              <button type="button" data-metric="lcp" aria-pressed="true">Load time</button>
+              <button type="button" data-metric="kb" aria-pressed="false">Page weight</button>
             </div>
           </div>
-          <div class="svc__text rv">
-            <h3>Social media marketing</h3>
-            <p>Content that keeps your business in front of local customers, planned monthly and posted consistently, in the language your customers actually speak.</p>
-            <ul class="svc__list" aria-label="What is included">
-              <li>Content planning</li>
-              <li>Reels and short videos</li>
-              <li>Post design</li>
-              <li>Captions in English, Malay and Mandarin</li>
-              <li>Page setup</li>
-              <li>Monthly reporting</li>
-            </ul>
-            <!-- Example caption in three languages. Without JavaScript all three show; with it, the buttons switch between them. -->
-            <div class="sample" data-sample>
-              <div class="sample__head">
-                <p class="sample__label">Example post caption</p>
-                <div class="sample__langs" role="group" aria-label="Caption language" data-sample-langs hidden>
-                  <button type="button" lang="en" data-lang="en" aria-pressed="true">English</button>
-                  <button type="button" lang="ms" data-lang="ms" aria-pressed="false">Melayu</button>
-                  <button type="button" lang="zh-Hans" data-lang="zh" aria-pressed="false">中文</button>
-                </div>
-              </div>
-              <div class="sample__body" aria-live="polite">
-                <p class="sample__text" lang="en" data-caption="en">Good news for early risers. From this Saturday we open at 8am. Come in for breakfast and bring a friend.</p>
-                <p class="sample__text" lang="ms" data-caption="ms">Berita baik untuk anda yang suka bangun awal. Mulai Sabtu ini, kami dibuka seawal jam 8 pagi. Jemput datang bersarapan bersama kawan-kawan.</p>
-                <p class="sample__text" lang="zh-Hans" data-caption="zh">早起的朋友们，好消息来了。从这个星期六开始，我们早上8点就开门，欢迎约上朋友一起来吃早餐。</p>
-              </div>
-            </div>
+          <div class="chart__plot" data-chart-plot></div>
+          <div class="chart__data">
+          <table class="chart__table" data-chart-table>
+            <caption>Load time and page weight of the nine example sites, phone-sized screen on 4G</caption>
+            <thead><tr><th scope="col">Website</th><th scope="col">Main content visible</th><th scope="col">Page weight</th></tr></thead>
+            <tbody>
+              <tr><td>Selangor Welding &amp; Racking</td><td>0.7 s</td><td>0.9 MB</td></tr>
+              <tr><td>Angel Club Beauty &amp; Wellness</td><td>0.9 s</td><td>0.6 MB</td></tr>
+              <tr><td>The Mimie's Catering</td><td>1.0 s</td><td>1.0 MB</td></tr>
+              <tr><td>K&amp;W World Engineering</td><td>1.1 s</td><td>0.4 MB</td></tr>
+              <tr><td>Sunshine Tots</td><td>1.2 s</td><td>4.4 MB</td></tr>
+              <tr><td>Safiyya Pet Shop</td><td>1.3 s</td><td>1.2 MB</td></tr>
+              <tr><td>Yakiniku Ichiban</td><td>1.3 s</td><td>1.8 MB</td></tr>
+              <tr><td>H2 Fix</td><td>1.8 s</td><td>0.5 MB</td></tr>
+              <tr><td>EPS Sports Academy</td><td>3.0 s</td><td>5.1 MB</td></tr>
+            </tbody>
+          </table>
           </div>
-        </article>
-
-        <div class="extras rv">
-          <h3>Also handled</h3>
-          <ul class="extras__list">
-            <li>Google Business Profile setup</li>
-            <li>Redesign of an existing website</li>
-            <li>All updates and maintenance after launch, just WhatsApp me</li>
-            <li>Hosting on Netlify or Cloudflare</li>
-          </ul>
-        </div>
-
-        <!-- Helper: three questions and a suggestion. Questions and answers live in main.js. Hidden without JavaScript. -->
-        <div class="helper rv" id="helper" data-helper hidden>
-          <div class="helper__intro">
-            <h3>Which one fits your business?</h3>
-            <p>Three short questions, then a plain suggestion of where to start. You can change your answers at any time.</p>
-          </div>
-          <div class="helper__panel" data-helper-panel></div>
+          <p class="chart__note">Measured by me on 14 October 2026 in a test browser set up like a mid-range phone on mobile data: phone-sized screen, 9 Mbps download, 60 ms latency and a processor slowed to half speed. Each site was loaded three times with an empty cache and the middle result is shown. "Main content visible" is the moment the largest image or block of text appears. Your own speed will vary with your phone and signal.</p>
         </div>
       </div>
     </section>
@@ -378,9 +404,11 @@
     <section class="yours" id="yours" data-builder hidden>
       <div class="wrap yours__grid">
         <div class="yours__copy">
-          <h2 class="rv-words">Now picture yours.</h2>
-          <p class="lead rv">Type your business name and choose what you do. This is a quick sketch to help you picture it. Your real website is designed from scratch around your business.</p>
-          <div class="yours__controls rv">
+          <header class="section-head reveal">
+            <h2 data-words>Now picture yours.</h2>
+            <p class="section-head__sub">Type your business name and choose what you do. This is a quick sketch to help you picture it. Your real website is designed from scratch around your business.</p>
+          </header>
+          <div class="yours__controls reveal">
             <div class="form__row">
               <div class="field">
                 <label for="y-name">Business name</label>
@@ -415,7 +443,7 @@
           </div>
         </div>
 
-        <div class="yours__stage">
+        <div class="yours__stage reveal no-blur" style="--d: .1s">
           <div class="mock" data-mock aria-hidden="true">
             <div class="mock__screen">
               <div class="mock__top">
@@ -455,25 +483,125 @@
       </div>
     </section>
 
-    <!-- PROCESS: a line draws across the steps as you scroll, lighting each one in turn -->
-    <section class="process" id="process">
+    <!-- SERVICES -->
+    <section class="services" id="services">
       <div class="wrap">
-        <h2 class="rv-words">How a project runs</h2>
-        <p class="lead rv">Straightforward from first call to launch and beyond, with one person handling everything. You never have to touch the website yourself.</p>
-        <ol class="flow" data-flow>
-          <li class="flow__step">
+        <header class="section-head reveal">
+          <h2 data-words>Two things, done properly.</h2>
+          <p class="section-head__sub">A website that earns trust, and the social media that keeps people coming back to it. Take one or both.</p>
+        </header>
+
+        <div class="bento">
+          <article class="tile tile--web reveal">
+            <div class="tile__body">
+              <h3>Website design and build</h3>
+              <p>A website you own outright, with no monthly builder fees. Mobile-first, quick to load, and written to turn visitors into enquiries: your services, WhatsApp and call buttons, Google Maps and reviews, all in one place. After launch I keep it updated for you.</p>
+              <ul class="pills" aria-label="What is included">
+                <li>Custom design</li>
+                <li>Copywriting</li>
+                <li>WhatsApp and call buttons</li>
+                <li>Google Maps and reviews</li>
+                <li>Domain and hosting setup</li>
+                <li>Search-friendly structure</li>
+                <li>Ongoing updates by WhatsApp</li>
+              </ul>
+            </div>
+            <div class="tile__media" aria-hidden="true">
+              <div class="mini-browser">
+                <img src="angelclub-full.webp" width="1200" height="4852" alt="" loading="lazy" decoding="async">
+              </div>
+              <div class="mini-phone">
+                <img src="h2fix-mobile.webp" width="360" height="800" alt="" loading="lazy" decoding="async">
+              </div>
+            </div>
+          </article>
+
+          <article class="tile tile--social reveal" style="--d: .08s">
+            <div class="tile--social__copy">
+              <h3>Social media marketing</h3>
+              <p>Content that keeps your business in front of local customers, planned monthly and posted consistently, in the language your customers actually speak.</p>
+              <ul class="pills pills--onaccent" aria-label="What is included">
+                <li>Content planning</li>
+                <li>Reels and short videos</li>
+                <li>Post design</li>
+                <li>Captions in English, Malay and Mandarin</li>
+                <li>Page setup</li>
+                <li>Monthly reporting</li>
+              </ul>
+              <!-- Example caption in three languages. Without JavaScript all three show; with it, the buttons switch between them. -->
+              <div class="sample" data-sample>
+                <div class="sample__head">
+                  <p class="sample__label">Example post caption</p>
+                  <div class="sample__langs" role="group" aria-label="Caption language" data-sample-langs hidden>
+                    <button type="button" lang="en" data-lang="en" aria-pressed="true">English</button>
+                    <button type="button" lang="ms" data-lang="ms" aria-pressed="false">Melayu</button>
+                    <button type="button" lang="zh-Hans" data-lang="zh" aria-pressed="false">中文</button>
+                  </div>
+                </div>
+                <div class="sample__body" aria-live="polite">
+                  <p class="sample__text" lang="en" data-caption="en">Good news for early risers. From this Saturday we open at 8am. Come in for breakfast and bring a friend.</p>
+                  <p class="sample__text" lang="ms" data-caption="ms">Berita baik untuk anda yang suka bangun awal. Mulai Sabtu ini, kami dibuka seawal jam 8 pagi. Jemput datang bersarapan bersama kawan-kawan.</p>
+                  <p class="sample__text" lang="zh-Hans" data-caption="zh">早起的朋友们，好消息来了。从这个星期六开始，我们早上8点就开门，欢迎约上朋友一起来吃早餐。</p>
+                </div>
+              </div>
+            </div>
+            <!-- a short looping clip of Alfred filming content, shown in a phone like a Reel -->
+            <div class="reelphone" aria-hidden="true">
+              <img src="alfred-reel.webp" width="720" height="1280" alt="" loading="lazy" decoding="async">
+              <video muted loop playsinline preload="none" poster="alfred-reel.webp" data-src="alfred-reel.mp4" data-lazyvideo tabindex="-1"></video>
+              <span class="reelphone__ui"><span class="reelphone__rec"></span>Reel</span>
+            </div>
+          </article>
+
+          <article class="tile tile--extra reveal" style="--d: .16s">
+            <h3>Also handled</h3>
+            <ul class="checklist">
+              <li>Google Business Profile setup</li>
+              <li>Redesign of an existing website</li>
+              <li>All updates and maintenance after launch, just WhatsApp me</li>
+              <li>Hosting on Netlify or Cloudflare</li>
+            </ul>
+            <p class="tile__foot">Not sure what you need? <a href="#contact">Tell me about your business</a> and I will suggest the simplest option.</p>
+          </article>
+        </div>
+
+        <!-- Helper: three questions and a suggestion. Questions and answers live in main.js. Hidden without JavaScript. -->
+        <div class="helper reveal" id="helper" data-helper hidden>
+          <div class="helper__intro">
+            <h3>Which one fits your business?</h3>
+            <p>Three short questions, then a plain suggestion of where to start. You can change your answers at any time.</p>
+          </div>
+          <div class="helper__panel" data-helper-panel></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PROCESS: the line fills as you scroll through the steps -->
+    <section class="process" id="process">
+      <div class="wrap process__grid">
+        <header class="section-head process__head reveal">
+          <h2 data-words>How a project runs</h2>
+          <p class="section-head__sub">Straightforward from first call to launch and beyond, with one person handling everything. You never have to touch the website yourself.</p>
+          <a class="btn btn--ghost" href="#contact">Start a project</a>
+        </header>
+        <ol class="steps" data-steps>
+          <li class="steps__item">
+            <span class="steps__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16v10H8l-4 4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span>
             <h3>We talk</h3>
             <p>A short WhatsApp call about your business, your customers and what the website needs to do for you.</p>
           </li>
-          <li class="flow__step">
+          <li class="steps__item">
+            <span class="steps__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 20l4-1 11-11-3-3L5 16zM14 7l3 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span>
             <h3>I design</h3>
             <p>You get a preview link within days. We go through it together and refine it until it feels right.</p>
           </li>
-          <li class="flow__step">
+          <li class="steps__item">
+            <span class="steps__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 8l-4 4 4 4M16 8l4 4-4 4M13 5l-2 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
             <h3>I build</h3>
             <p>Mobile-first, fast, and structured to be found on Google, with your own domain connected.</p>
           </li>
-          <li class="flow__step">
+          <li class="steps__item">
+            <span class="steps__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3c3 2 5 5 5 9l-2 4H9l-2-4c0-4 2-7 5-9zM9 16l-2 4M15 16l2 4M12 9v2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
             <h3>I launch and maintain</h3>
             <p>I put the site live, connect Google and WhatsApp, and keep maintaining it. New prices, opening hours or photos? Send me a WhatsApp message and I will update it for you.</p>
           </li>
@@ -481,36 +609,33 @@
       </div>
     </section>
 
-    <!-- ABOUT: the film opens up to full width as you scroll, then the introduction follows -->
+    <!-- ABOUT -->
     <section class="about" id="about">
-      <div class="film">
-        <div class="film__sticky">
-          <figure class="film__frame">
-            <img src="alfred-desk.webp" width="1280" height="720" alt="Alfred Wong Kai Xiang working on a website at a desk" loading="lazy" decoding="async">
-            <video muted loop playsinline preload="none" poster="alfred-desk.webp" data-src="alfred-desk.mp4" data-lazyvideo aria-hidden="true" tabindex="-1"></video>
-          </figure>
-          <h2 class="film__title">Hello, I am Alfred.</h2>
-        </div>
-      </div>
-      <div class="wrap about__body">
-        <div class="about__text rv">
+      <div class="wrap about__grid">
+        <figure class="about__film reveal no-blur">
+          <img src="alfred-desk.webp" width="1280" height="720" alt="Alfred Wong Kai Xiang working on a website at a desk" loading="lazy" decoding="async">
+          <video muted loop playsinline preload="none" poster="alfred-desk.webp" data-src="alfred-desk.mp4" data-lazyvideo aria-hidden="true" tabindex="-1"></video>
+          <figcaption class="about__badge"><span class="pulse"></span>Designing, writing and building</figcaption>
+        </figure>
+        <div class="about__copy reveal" style="--d: .1s">
+          <h2 data-words>Hello, I am Alfred.</h2>
           <p>I design and build websites for small businesses, and run the social media that keeps them busy. I am based in Bandar Bukit Tinggi, Klang, and work with owners across Klang, Shah Alam, Subang and Setia Alam, and further afield when the fit is right.</p>
           <p>Most of my clients are not technical and do not want to be. They want a website that looks trustworthy, loads fast on a phone, and makes it easy for a customer to call or WhatsApp. That is what I build, and I explain everything in plain language along the way. Once it is live, I look after it, so you never need to log in anywhere.</p>
+          <dl class="facts">
+            <div>
+              <dt>Websites built</dt>
+              <dd data-count="20" data-suffix="+">20+</dd>
+            </div>
+            <div>
+              <dt>Languages</dt>
+              <dd>English, Malay, Mandarin</dd>
+            </div>
+            <div>
+              <dt>Based in</dt>
+              <dd>Klang, Selangor</dd>
+            </div>
+          </dl>
         </div>
-        <dl class="facts rv">
-          <div>
-            <dt>Websites built</dt>
-            <dd><span data-count="20" data-suffix="+">20+</span></dd>
-          </div>
-          <div>
-            <dt>Languages</dt>
-            <dd>English, Malay, Mandarin</dd>
-          </div>
-          <div>
-            <dt>Based in</dt>
-            <dd>Klang, Selangor</dd>
-          </div>
-        </dl>
       </div>
     </section>
 
@@ -523,13 +648,15 @@
     -->
     <section class="quotes" id="testimonials" hidden>
       <div class="wrap">
-        <h2>What clients say</h2>
+        <header class="section-head reveal">
+          <h2>What clients say</h2>
+        </header>
         <div class="quotes__grid">
-          <blockquote class="quote rv">
+          <blockquote class="quote reveal">
             <p>“Alfred understood the business straight away. The website was live within a few weeks and customers now WhatsApp us directly from Google.”</p>
             <footer>Michael Gan, Selangor Welding &amp; Racking, Klang</footer>
           </blockquote>
-          <blockquote class="quote rv">
+          <blockquote class="quote reveal" style="--d: .1s">
             <p>“Clear communication from start to finish. The site explains our electrical services properly and looks professional on a phone, which is where most of our enquiries come from.”</p>
             <footer>K&amp;W World Engineering, Kepong</footer>
           </blockquote>
@@ -539,15 +666,16 @@
 
     <!-- CONTACT -->
     <section class="contact" id="contact">
+      <div class="contact__glow" aria-hidden="true"></div>
       <div class="wrap contact__grid">
-        <div class="contact__copy">
-          <h2 class="contact__title rv-words">Tell me about your business.</h2>
-          <p class="rv">Send a few lines about what you do and what you need. WhatsApp is the fastest way to reach me, but the form works too.</p>
-          <a class="btn btn--primary btn--lg contact__wa rv" href="https://wa.me/60105072222?text=Hi%20Alfred%2C%20I%20would%20like%20to%20talk%20about%20a%20website%20for%20my%20business." target="_blank" rel="noopener" data-magnetic>
+        <div class="contact__copy reveal">
+          <h2 class="contact__title" data-words>Tell me about your business.</h2>
+          <p>Send a few lines about what you do and what you need. WhatsApp is the fastest way to reach me, but the form works too.</p>
+          <a class="btn btn--primary btn--lg contact__wa" href="https://wa.me/60105072222?text=Hi%20Alfred%2C%20I%20would%20like%20to%20talk%20about%20a%20website%20for%20my%20business." target="_blank" rel="noopener" data-magnetic>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
             Message on WhatsApp
           </a>
-          <dl class="contact__list rv">
+          <dl class="contact__list">
             <div>
               <dt>Phone</dt>
               <dd><a href="tel:+60105072222">+60 10-507 2222</a></dd>
@@ -572,7 +700,7 @@
           Pressing Send opens WhatsApp with the details pre-filled as a message to +60 10-507 2222.
           The number lives in data-whatsapp below and in the WhatsApp button above; change both if it changes.
         -->
-        <form class="form rv" name="contact" method="get" action="https://wa.me/60105072222" target="_blank" data-whatsapp="60105072222" data-contact-form>
+        <form class="form reveal" style="--d: .1s" name="contact" method="get" action="https://wa.me/60105072222" target="_blank" data-whatsapp="60105072222" data-contact-form>
           <div class="form__row">
             <div class="field">
               <label for="f-name">Your name</label>
@@ -605,7 +733,10 @@
           </div>
           <!-- Live preview of the WhatsApp message, filled in by main.js. Hidden without JavaScript. -->
           <div class="wa-preview" data-wa-preview hidden>
-            <p class="wa-preview__head">Message preview</p>
+            <p class="wa-preview__head">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Z"/></svg>
+              Message preview
+            </p>
             <div class="wa-preview__chat">
               <p class="wa-preview__bubble"><span class="wa-preview__text" data-wa-preview-text></span><span class="wa-preview__meta">Not sent yet</span></p>
             </div>
@@ -617,10 +748,9 @@
     </section>
   </main>
 
-  <!-- FOOTER: the name fills with colour as you reach the end of the page -->
   <footer class="footer">
     <div class="wrap">
-      <p class="footer__mark" aria-hidden="true">Alfred Wong</p>
+      <p class="footer__mark" aria-hidden="true" data-footer-mark>Alfred Wong</p>
       <div class="footer__inner">
         <div>
           <p class="footer__brand">Alfred Wong Kai Xiang</p>
