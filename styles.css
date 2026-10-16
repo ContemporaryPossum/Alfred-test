@@ -231,7 +231,7 @@ h3 {
 /* ---------- nav ---------- */
 .nav-sentinel { position: absolute; top: 0; height: 40px; width: 1px; pointer-events: none; }
 /* ---------- background field (drawn by main.js) ---------- */
-.field {
+.dotfield {
   position: fixed;
   inset: 0;
   z-index: 0;
@@ -244,7 +244,7 @@ h3 {
   -webkit-mask-image: radial-gradient(130% 95% at 50% 45%, rgba(0, 0, 0, .55), #000 85%);
   mask-image: radial-gradient(130% 95% at 50% 45%, rgba(0, 0, 0, .55), #000 85%);
 }
-.field.is-on { opacity: 1; }
+.dotfield.is-on { opacity: 1; }
 main, .footer { position: relative; z-index: 1; }
 html.lenis, html.lenis body { height: auto; }
 html.lenis { scroll-behavior: auto; }
@@ -805,21 +805,31 @@ body.intro-active { overflow: hidden; }
 .reel__rail { position: relative; height: 2px; background: var(--line); border-radius: 2px; overflow: hidden; }
 .reel__rail span { position: absolute; inset: 0; background: var(--accent); transform-origin: left; transform: scaleX(var(--p, 0)); }
 
-/* pinned mode (desktop, set by main.js): vertical scrolling slides the cards sideways */
-.reel.is-pinned .reel__viewport {
+/* pinned mode (computers, set by main.js): vertical scrolling slides the cards sideways.
+   The stage, cards and progress line together, stays on screen for the whole slide. */
+.reel.is-pinned .reel__stage {
   position: sticky;
   top: 0;
   height: 100vh;
   height: 100svh;
+  display: flex;
+  flex-direction: column;
+  padding: calc(var(--nav-h) + 1rem) 0 5vh;
+}
+.reel.is-pinned .reel__viewport {
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: hidden;
   overflow: clip;
   display: flex;
   align-items: center;
-  padding: calc(var(--nav-h) + 1rem) 0 2rem;
+  padding: 0;
   scroll-snap-type: none;
 }
+/* cards shrink on short screens so the progress line always fits underneath */
+.reel.is-pinned .card:not(.card--next) { width: min(84vw, 960px, (100vh - 250px) * 1.65); }
 .reel.is-pinned .reel__track { transform: translate3d(calc(var(--x, 0) * -1px), 0, 0); will-change: transform; }
-.reel.is-pinned .reel__rail { position: sticky; bottom: 4vh; z-index: 2; margin-top: -2px; }
+.reel.is-pinned .reel__rail { flex: none; margin-top: 1.25rem; }
 
 .card {
   position: relative;

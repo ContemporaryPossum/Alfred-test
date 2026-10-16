@@ -66,9 +66,10 @@
   <!--
     FIELD: a background drawn from an abstract video, turned into a field of tangerine dots.
     The frames live in field-sprite.webp; main.js picks the frame from how far you have scrolled,
-    and the dots near the mouse swell and move aside. Decorative only.
+    and the dots near the mouse (or a finger on phones) swell and move aside. Decorative only.
+    Its class is "dotfield" so it never clashes with the "field" class on the form boxes.
   -->
-  <canvas class="field" data-field aria-hidden="true"></canvas>
+  <canvas class="dotfield" data-field aria-hidden="true"></canvas>
 
   <!--
     INTRO: the site addresses the visitor directly before the hero appears.
@@ -211,12 +212,14 @@
         <header class="section-head reveal">
           <p class="eyebrow">Selected work</p>
           <h2 data-words>Nine of my 20+ websites, nine very different businesses.</h2>
-          <p class="section-head__sub">From a welding workshop in Klang to a sports academy in Kuala Lumpur and a yakiniku restaurant in Kuching. Each one designed, written and built by me. <span class="hint-fine">Rest on a preview to scroll through the page, and click to visit the live site.</span><span class="hint-touch">Swipe to browse, and tap to visit the live site.</span></p>
+          <p class="section-head__sub">From a welding workshop in Klang to a sports academy in Kuala Lumpur and a yakiniku restaurant in Kuching. Each one designed, written and built by me. <span class="hint-fine">Rest on a preview to scroll through the page, and click to visit the live site.</span><span class="hint-touch">Swipe to browse. The card in the middle scrolls through its homepage, and a tap opens the live site.</span></p>
         </header>
         <div class="work__count" aria-hidden="true"><span data-reel-index>01</span> / <span>09</span></div>
       </div>
 
       <div class="reel" data-reel>
+        <!-- the stage holds the cards and the progress line; on computers it stays on screen while the cards slide -->
+        <div class="reel__stage">
         <div class="reel__viewport" data-reel-viewport>
           <ol class="reel__track" data-reel-track>
             <li class="card" style="--tone: #a6d13b" data-full="eps-full.webp">
@@ -349,6 +352,7 @@
           </ol>
         </div>
         <div class="wrap reel__rail" aria-hidden="true"><span data-reel-bar></span></div>
+        </div>
       </div>
     </section>
 

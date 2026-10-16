@@ -173,6 +173,10 @@
     };
     document.addEventListener("intro:done", () => {
       setTimeout(() => say("hello", "Hello, I am Alfred. Take your time."), 1800);
+      // phones: point out that the dots in the background respond to touch
+      if (!finePointer && !reduceMotion && !saveData) {
+        setTimeout(() => say("touch", "Tap the background, or drag a finger across it. The dots follow you."), 9000);
+      }
       setTimeout(() => say("linger", "Still here? Thank you for taking a closer look."), 16000);
     });
     if (finePointer) {
@@ -375,8 +379,9 @@
   }
 
   /* ---------- work: a reel of live sites ---------- */
-  // Desktop: the section pins and your vertical scrolling slides the cards sideways.
-  // Phones, tablets and reduced motion: a normal sideways scroller you can swipe.
+  // Computers (mouse or trackpad, 760 px and wider): the section pins and your vertical scrolling
+  // slides the cards sideways. Phones, tablets and reduced motion: a sideways row you swipe, where the
+  // cards turn like pages as they leave the middle and the middle card scrolls through its homepage.
   const reel = $("[data-reel]");
   if (reel) {
     const viewport = $("[data-reel-viewport]", reel);
@@ -385,16 +390,72 @@
     const bar = $("[data-reel-bar]", reel);
     const indexEl = $("[data-reel-index]");
     const total = cards.filter((c) => !c.classList.contains("card--next")).length;
-    const wide = window.matchMedia("(min-width: 1000px)");
-    let pinned = false, maxX = 0, raf = 0;
+    const wide = window.matchMedia("(min-width: 760px) and (hover: hover) and (pointer: fine)");
+    const touchPreviews = !finePointer && !reduceMotion && !saveData;
+    let pinned = false, maxX = 0, raf = 0, inView = false, centred = -1, settleTimer = 0;
 
-    const setIndex = (centre) => {
+    // previews: the full-length screenshot (data-full on each card) scrolls from the top of the homepage to the bottom
+    const previews = cards.map((card) => {
+      const src = card.dataset.full;
+      const screen = $(".card__screen", card);
+      if (!src || !screen || reduceMotion) return null;
+      let full = null, on = false, timer = 0;
+      const run = () => {
+        if (!on || !full || !full.naturalHeight) return;
+        const travel = full.offsetHeight - screen.clientHeight;
+        if (travel <= 0) return;
+        full.classList.add("is-on");
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          if (!on) return;
+          const secs = Math.min(20, Math.max(6, travel / 150));
+          full.classList.add("is-moving");
+          full.style.transitionDuration = secs.toFixed(1) + "s, .5s";
+          full.style.transform = "translateY(" + (-travel) + "px)";
+        }, 450);
+      };
+      return {
+        start() {
+          on = true;
+          if (!full) {
+            full = el("img", { class: "card__full", alt: "", decoding: "async" });
+            full.addEventListener("error", () => { if (full) full.remove(); full = null; }, { once: true });
+            screen.appendChild(full);
+            full.src = src;
+          }
+          if (full.complete && full.naturalHeight) run(); else full.addEventListener("load", run, { once: true });
+        },
+        stop() {
+          on = false;
+          clearTimeout(timer);
+          if (!full) return;
+          full.classList.remove("is-on", "is-moving");
+          full.style.transitionDuration = "";
+          full.style.transform = "";
+        }
+      };
+    });
+
+    const nearest = (centre) => {
       let best = 0, bestD = Infinity;
       cards.forEach((c, i) => {
         const d = Math.abs(c.offsetLeft + c.offsetWidth / 2 - centre);
         if (d < bestD) { bestD = d; best = i; }
       });
+      return best;
+    };
+    const setIndex = (best) => {
       if (indexEl) indexEl.textContent = String(Math.min(best + 1, total)).padStart(2, "0");
+    };
+    // touch screens: once a card has settled in the middle, its homepage starts scrolling
+    const settle = (best) => {
+      if (!touchPreviews) return;
+      if (!inView || pinned) best = -1;
+      if (best === centred) return;
+      if (centred >= 0 && previews[centred]) previews[centred].stop();
+      centred = best;
+      clearTimeout(settleTimer);
+      if (best >= 0 && previews[best]) settleTimer = setTimeout(() => previews[best].start(), 700);
     };
     // cards away from the middle turn slightly, like pages in a book
     const shape = (centre) => {
@@ -412,12 +473,16 @@
         const x = p * maxX;
         track.style.setProperty("--x", x.toFixed(1));
         if (bar) bar.style.setProperty("--p", p.toFixed(4));
-        setIndex(x + window.innerWidth / 2);
+        setIndex(nearest(x + window.innerWidth / 2));
         shape(x + window.innerWidth / 2);
       } else {
         const max = viewport.scrollWidth - viewport.clientWidth;
+        const centre = viewport.scrollLeft + viewport.clientWidth / 2;
+        const best = nearest(centre);
         if (bar) bar.style.setProperty("--p", (max > 0 ? viewport.scrollLeft / max : 0).toFixed(4));
-        setIndex(viewport.scrollLeft + viewport.clientWidth / 2);
+        setIndex(best);
+        if (!reduceMotion) shape(centre);
+        settle(best);
       }
     };
     const request = () => { if (!raf) raf = requestAnimationFrame(update); };
@@ -447,6 +512,10 @@
         $$("img[loading='lazy']", track).forEach((img) => { img.loading = "eager"; });
       }, { rootMargin: "800px 0px" });
       near.observe(reel);
+      // touch previews only run while the row of cards is actually on screen
+      if (touchPreviews) {
+        new IntersectionObserver(([en]) => { inView = en.isIntersecting; request(); }, { threshold: 0.5 }).observe(viewport);
+      }
     }
     window.addEventListener("scroll", () => { if (pinned) request(); }, { passive: true });
     viewport.addEventListener("scroll", () => { if (!pinned) request(); }, { passive: true });
@@ -467,46 +536,13 @@
       smooth.to(y);
     });
 
-    // rest the pointer on a preview to scroll through the whole homepage (data-full on each card)
-    if (finePointer && !reduceMotion) {
-      cards.forEach((card) => {
-        const src = card.dataset.full;
+    // mouse: rest the pointer on a preview to scroll through the whole homepage
+    if (finePointer) {
+      cards.forEach((card, i) => {
         const shot = $(".card__shot", card);
-        const screen = $(".card__screen", card);
-        if (!src || !shot || !screen) return;
-        let full = null, hovering = false, timer = 0;
-        const reset = () => {
-          clearTimeout(timer);
-          if (!full) return;
-          full.classList.remove("is-on", "is-moving");
-          full.style.transitionDuration = "";
-          full.style.transform = "";
-        };
-        const run = () => {
-          if (!hovering || !full || !full.naturalHeight) return;
-          const travel = full.offsetHeight - screen.clientHeight;
-          if (travel <= 0) return;
-          full.classList.add("is-on");
-          clearTimeout(timer);
-          timer = setTimeout(() => {
-            if (!hovering) return;
-            const secs = Math.min(20, Math.max(6, travel / 150));
-            full.classList.add("is-moving");
-            full.style.transitionDuration = secs.toFixed(1) + "s, .5s";
-            full.style.transform = "translateY(" + (-travel) + "px)";
-          }, 450);
-        };
-        shot.addEventListener("pointerenter", () => {
-          hovering = true;
-          if (!full) {
-            full = el("img", { class: "card__full", alt: "", decoding: "async" });
-            full.addEventListener("error", () => { if (full) full.remove(); full = null; }, { once: true });
-            screen.appendChild(full);
-            full.src = src;
-          }
-          if (full.complete && full.naturalHeight) run(); else full.addEventListener("load", run, { once: true });
-        });
-        shot.addEventListener("pointerleave", () => { hovering = false; reset(); });
+        if (!shot || !previews[i]) return;
+        shot.addEventListener("pointerenter", () => previews[i].start());
+        shot.addEventListener("pointerleave", () => previews[i].stop());
       });
     }
   }
@@ -609,17 +645,21 @@
   // field-sprite.webp holds 120 small frames of a slow flowing-wave clip (made with Higgsfield).
   // How far you have scrolled picks the frame, each frame is read as a coarse grid of brightness
   // values, and every grid cell becomes a dot sized by that brightness. Dots near the mouse swell
-  // and move aside. Reduced motion and data saver get one still frame.
+  // and move aside. On touch screens they gather under your finger, and a tap sends a ripple across
+  // the screen. Reduced motion and data saver get one still frame.
   const fieldCanvas = $("[data-field]");
   if (fieldCanvas && fieldCanvas.getContext) {
     const SPRITE = { src: "field-sprite.webp", frames: 120, cols: 12, w: 160, h: 90 };
+    const RIPPLE = { life: 1400, band: 56 };
     const ctx = fieldCanvas.getContext("2d");
     const sample = document.createElement("canvas");
     const sctx = sample.getContext("2d", { willReadFrequently: true });
     const sheet = new Image();
     const still = reduceMotion || saveData;
+    const touch = !finePointer;
     let W = 0, H = 0, cell = 14, cols = 0, rows = 0, ready = false, raf = 0, last = 0;
     let frame = 0, frameTarget = 0, idle = 0, mx = -9999, my = -9999, pull = 0, pullTarget = 0;
+    let ripples = [];
     // how strong the field is behind each section: full where there is little text, faint behind reading
     const LEVELS = [["#top", 0.85], ["#proof", 1], ["#work", 0.55], ["#speed", 0.6], ["#yours", 0.35], ["#services", 0.5], ["#process", 0.35], ["#about", 0.2], ["#testimonials", 0.3], ["#contact", 0.22], [".footer", 0.9]];
     let level = 1, levelTarget = 1;
@@ -658,7 +698,7 @@
         // a slow breathing drift keeps the field alive between scrolls
         idle = Math.sin(now / 2600) * 1.6;
         frame += (frameTarget - frame) * 0.1;
-        pull += (pullTarget - pull) * 0.1;
+        pull += (pullTarget - pull) * (touch ? 0.2 : 0.1);
         level += (levelTarget - level) * 0.06;
       } else {
         level = levelTarget;
@@ -673,13 +713,14 @@
       const px = sctx.getImageData(0, 0, cols, rows).data;
       ctx.clearRect(0, 0, W, H);
       const lv = level * (W < 700 ? 0.65 : 1); // phones put text over more of the screen, so go gentler
-      ctx.fillStyle = "rgba(255, 106, 61, " + (0.7 * lv).toFixed(3) + ")";
-      ctx.beginPath();
-      const maxR = cell * 0.46 * (0.55 + 0.45 * lv), reach = 180;
+      const maxR = cell * 0.46 * (0.55 + 0.45 * lv), reach = touch ? 140 : 180;
+      // dots touched by a finger or a ripple go in a second, brighter layer so they show even where the field is faint
+      const dots = new Path2D(), lit = new Path2D();
+      ripples = ripples.filter((rp) => now - rp.t < RIPPLE.life);
       for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
           const l = Math.min(1, (px[(y * cols + x) * 4] / 255) * 1.35);
-          let r = maxR * Math.pow(l, 1.6);
+          let r = maxR * Math.pow(l, 1.6), glow = 0;
           let cx = x * cell + cell / 2, cy = y * cell + cell / 2;
           if (pull > 0.01) {
             const dx = cx - mx, dy = cy - my, d = Math.sqrt(dx * dx + dy * dy);
@@ -688,14 +729,33 @@
               r += maxR * 0.55 * k;
               cx += (dx / (d || 1)) * 12 * k;
               cy += (dy / (d || 1)) * 12 * k;
+              if (touch) glow = k;
+            }
+          }
+          for (let i = 0; i < ripples.length; i++) {
+            const rp = ripples[i], age = Math.max(0, (now - rp.t) / RIPPLE.life);
+            const dx = cx - rp.x, dy = cy - rp.y, d = Math.sqrt(dx * dx + dy * dy);
+            const ring = Math.abs(d - age * rp.max);
+            if (ring < RIPPLE.band) {
+              const k = (1 - ring / RIPPLE.band) * (1 - age);
+              r += maxR * 0.9 * k;
+              cx += (dx / (d || 1)) * 8 * k;
+              cy += (dy / (d || 1)) * 8 * k;
+              glow = Math.max(glow, k);
             }
           }
           if (r < 0.5) continue;
-          ctx.moveTo(cx + r, cy);
-          ctx.arc(cx, cy, r, 0, 6.2832);
+          const path = touch && glow > 0.3 ? lit : dots;
+          path.moveTo(cx + r, cy);
+          path.arc(cx, cy, r, 0, 6.2832);
         }
       }
-      ctx.fill();
+      ctx.fillStyle = "rgba(255, 106, 61, " + (0.7 * lv).toFixed(3) + ")";
+      ctx.fill(dots);
+      if (touch) {
+        ctx.fillStyle = "rgba(255, 106, 61, 0.85)";
+        ctx.fill(lit);
+      }
       if (!still) request();
     };
     // about 30 frames a second is plenty for a background, and kinder to batteries
@@ -722,6 +782,29 @@
       if (finePointer) {
         window.addEventListener("pointermove", (e) => { mx = e.clientX; my = e.clientY; pullTarget = 1; }, { passive: true });
         root.addEventListener("mouseleave", () => { pullTarget = 0; });
+      } else {
+        // touch: the dots gather under your finger while it is down (scrolling included),
+        // and a quick tap sends a ripple out from where you tapped
+        let down = null;
+        window.addEventListener("touchstart", (e) => {
+          const t = e.touches[0];
+          mx = t.clientX; my = t.clientY; pullTarget = 1;
+          down = { x: mx, y: my, t: performance.now() };
+        }, { passive: true });
+        window.addEventListener("touchmove", (e) => {
+          const t = e.touches[0];
+          mx = t.clientX; my = t.clientY;
+        }, { passive: true });
+        const lift = () => {
+          pullTarget = 0;
+          if (down && performance.now() - down.t < 350 && Math.abs(mx - down.x) + Math.abs(my - down.y) < 14) {
+            ripples.push({ x: down.x, y: down.y, t: performance.now(), max: Math.sqrt(W * W + H * H) });
+            if (ripples.length > 4) ripples.shift();
+          }
+          down = null;
+        };
+        window.addEventListener("touchend", lift, { passive: true });
+        window.addEventListener("touchcancel", () => { pullTarget = 0; down = null; }, { passive: true });
       }
     }
   }
