@@ -594,6 +594,38 @@
     videos.forEach((v) => io.observe(v));
   }
 
+  /* ---------- showreel: plays muted while on screen, with Pause and Sound buttons ---------- */
+  // Reduced motion, data saver and no JavaScript keep the browser's own controls, so nothing plays by itself.
+  const showreel = $("[data-showreel]");
+  if (showreel && !reduceMotion && !saveData && "IntersectionObserver" in window) {
+    const v = $("video", showreel);
+    const controls = $("[data-showreel-controls]", showreel);
+    const playBtn = $("[data-showreel-play]", showreel);
+    const soundBtn = $("[data-showreel-sound]", showreel);
+    let userPaused = false;
+    v.removeAttribute("controls");
+    controls.hidden = false;
+    const fallback = () => { v.setAttribute("controls", ""); controls.hidden = true; };
+    const start = () => { const p = v.play(); if (p && p.catch) p.catch(fallback); };
+    const sync = () => { playBtn.textContent = v.paused ? "Play" : "Pause"; };
+    v.addEventListener("play", sync);
+    v.addEventListener("pause", sync);
+    new IntersectionObserver(([en]) => {
+      if (en.isIntersecting && !userPaused) start();
+      else if (!en.isIntersecting && !v.paused) v.pause();
+    }, { threshold: 0.4 }).observe(v);
+    playBtn.addEventListener("click", () => {
+      if (v.paused) { userPaused = false; start(); } else { userPaused = true; v.pause(); }
+    });
+    soundBtn.addEventListener("click", () => {
+      v.muted = !v.muted;
+      soundBtn.textContent = v.muted ? "Sound on" : "Sound off";
+      soundBtn.setAttribute("aria-pressed", String(!v.muted));
+      if (!v.muted && v.paused) { userPaused = false; start(); }
+    });
+    sync();
+  }
+
   /* ---------- footer: the name fills with colour as you reach the end ---------- */
   const mark = $("[data-footer-mark]");
   if (mark) {
@@ -661,7 +693,7 @@
     let frame = 0, frameTarget = 0, idle = 0, mx = -9999, my = -9999, pull = 0, pullTarget = 0;
     let ripples = [];
     // how strong the field is behind each section: full where there is little text, faint behind reading
-    const LEVELS = [["#top", 0.85], ["#proof", 1], ["#work", 0.55], ["#speed", 0.6], ["#yours", 0.35], ["#services", 0.5], ["#process", 0.35], ["#about", 0.2], ["#testimonials", 0.3], ["#contact", 0.22], [".footer", 0.9]];
+    const LEVELS = [["#top", 0.85], ["#proof", 1], ["#showreel", 0.35], ["#work", 0.55], ["#speed", 0.6], ["#yours", 0.35], ["#services", 0.5], ["#process", 0.35], ["#about", 0.2], ["#testimonials", 0.3], ["#contact", 0.22], [".footer", 0.9]];
     let level = 1, levelTarget = 1;
     if ("IntersectionObserver" in window) {
       const zones = new IntersectionObserver((entries) => {

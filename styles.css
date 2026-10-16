@@ -768,6 +768,42 @@ body.intro-active { overflow: hidden; }
 .yours, .services, .process, .about, .quotes, .contact { padding-block: var(--section); }
 .services, .about { border-top: 1px solid var(--line); }
 
+/* ---------- showreel: the 25-second promo film ---------- */
+.showreel { padding-block: var(--section); border-top: 1px solid var(--line); }
+.showreel__frame { margin: 0; }
+.showreel__screen {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: #000;
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 50px 100px -40px rgba(0, 0, 0, .9), 0 0 0 1px rgba(0, 0, 0, .4);
+}
+.showreel__video { width: 100%; height: auto; aspect-ratio: 16 / 9; background: #000; }
+.showreel__controls {
+  position: absolute;
+  right: clamp(.75rem, 2vw, 1.25rem);
+  bottom: clamp(.75rem, 2vw, 1.25rem);
+  display: flex;
+  gap: .5rem;
+}
+.showreel__btn {
+  padding: .65rem 1.05rem;
+  border-radius: var(--pill);
+  border: 1px solid var(--line-strong);
+  background: rgba(13, 14, 17, .72);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  color: var(--ink);
+  font-size: .875rem;
+  font-weight: 600;
+  line-height: 1;
+  transition: background-color .3s, border-color .3s, color .3s;
+}
+.showreel__btn:hover { background: rgba(13, 14, 17, .92); border-color: var(--ink-2); }
+.showreel__btn[data-showreel-sound][aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+.showreel__note { margin-top: .9rem; color: var(--ink-3); font-size: .9rem; }
+
 /* ---------- work: horizontal reel ---------- */
 .work { padding-top: var(--section); padding-bottom: clamp(3rem, 6vw, 5rem); border-top: 1px solid var(--line); }
 .work__head { display: flex; justify-content: space-between; align-items: flex-end; gap: 2rem; }
@@ -1836,6 +1872,10 @@ body.intro-active { overflow: hidden; }
     /* contact: the heading slides in from the side as you arrive */
     .contact__title { animation: title-slide linear both; animation-timeline: view(block 0px); animation-range: entry 0% cover 35%; }
     @keyframes title-slide { from { transform: translateX(-6vw); } to { transform: none; } }
+
+    /* showreel: the screen opens out of cinema bars as it arrives */
+    .showreel__screen { animation: reel-open linear both; animation-timeline: view(block 0px); animation-range: entry 10% cover 45%; }
+    @keyframes reel-open { from { clip-path: inset(16% 5% round 16px); transform: scale(.95); } to { clip-path: inset(0 0 round 16px); transform: none; } }
   }
 }
 

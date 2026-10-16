@@ -206,6 +206,31 @@
       </div>
     </section>
 
+    <!--
+      SHOWREEL: a 25-second promo film made with Higgsfield (Katana). The studio scenes of Alfred are
+      AI-generated from his own photo; the client websites and numbers are real and match this page.
+      main.js plays it muted while it is on screen and shows Pause and Sound buttons. Without JavaScript,
+      with reduced motion or with data saver, the browser's own controls show instead and nothing plays by itself.
+    -->
+    <section class="showreel" id="showreel" aria-labelledby="showreel-title">
+      <div class="wrap">
+        <header class="section-head reveal">
+          <p class="eyebrow">Showreel</p>
+          <h2 id="showreel-title" data-words>Twenty-five seconds of what I do.</h2>
+        </header>
+        <figure class="showreel__frame reveal no-blur" data-showreel>
+          <div class="showreel__screen">
+            <video class="showreel__video" src="alfred-showreel.mp4" poster="alfred-showreel.webp" width="1280" height="720" preload="none" muted loop playsinline controls aria-describedby="showreel-note"></video>
+            <div class="showreel__controls" data-showreel-controls hidden>
+              <button class="showreel__btn" type="button" data-showreel-play>Pause</button>
+              <button class="showreel__btn" type="button" data-showreel-sound aria-pressed="false">Sound on</button>
+            </div>
+          </div>
+          <figcaption class="showreel__note" id="showreel-note">Real client websites and real numbers from this page. The studio scenes were made with AI from my own photo.</figcaption>
+        </figure>
+      </div>
+    </section>
+
     <!-- WORK: on desktop the cards slide sideways as you scroll; on phones you swipe -->
     <section class="work" id="work">
       <div class="wrap work__head">

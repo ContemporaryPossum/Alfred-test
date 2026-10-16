@@ -23,9 +23,13 @@ geist-latin.woff2                body font (SIL Open Font License)
 *-desktop.webp / *-mobile.webp   screenshots of the nine client sites (1600 x 900 and 360 x 800)
 *-full.webp                      full-length homepage screenshots for the hover-to-scroll previews (1200 px wide)
 field-sprite.webp                120 frames (160 x 90 each) of the abstract wave clip behind the page
+alfred-showreel.mp4              the 25-second promo film for the Showreel section (1280 x 720, with sound)
+alfred-showreel.webp             its poster frame, shown before it plays and to reduced-motion visitors
 ```
 
 The three videos of Alfred were made with Higgsfield from his own photo. The hero video animates the real portrait. The desk and café scenes are AI-generated pictures of Alfred, not real footage. The wave clip behind the page is also a Higgsfield generation.
+
+The showreel was made with Higgsfield's Katana workflow on 15 October 2026. Its night-studio scenes (eyes, typing, chair spin, walk, look into the lens) are AI-generated from Alfred's own photo, which the caption under the video says. Everything else in it is real: the nine client websites, the 20+, the three languages and the 1.2 s median load time from the Speed chart. The sound is recorded sound effects from a free (CC0) library, with no music. A full-quality 1920 x 1080 copy and the editable project are kept in Alfred's Higgsfield account.
 
 ## Page, top to bottom
 
@@ -36,15 +40,16 @@ On desktop the mouse wheel is smoothed the way the Lenis library does it (the pa
 1. **Intro.** The site types four lines to the visitor, then splits open. Plays once per visit, skippable, skipped for reduced motion. Add `?intro` to the address to watch it again. There is no loading line.
 2. **Hero.** Headline words rise out of a mask, "customers." is underlined in tangerine. The portrait video sits in a frame with a line of light travelling around it, with real client work floating beside it. The frame and floating pieces follow the mouse, and the whole hero eases up and back as you scroll away. The speech bubble asides are in `main.js` (search for `say(`).
 3. **Proof.** Two marquees (client names, then kinds of business) that speed up while you scroll and turn around when you scroll up. Three numbers that count up: 20+ websites built, 3 languages, 1 person. The nine projects shown are examples from the 20+.
-4. **Selected work.** On computers with a mouse or trackpad (760 px wide and up) the section pins and scrolling moves the nine project cards sideways, with the orange progress line staying on screen underneath them. Cards shrink a little on short screens so the line always fits. Resting the mouse on a card's preview scrolls through that client's whole homepage. On phones and tablets the cards are a swipeable row: cards turn slightly as they leave the middle, and once a card settles in the middle its homepage scrolls by on its own (skipped with data saver). The last card invites the visitor to start a project.
-5. **Speed.** An interactive bar chart (in the style of Bklit charts, drawn in plain SVG) of how quickly the nine example sites load on a phone. Bars grow in when the chart arrives, hovering or tapping a bar shows its numbers, and a toggle switches between load time and page weight. A dashed line marks the median, which is also the big number above the chart. The numbers are real measurements, described in the note under the chart; they are stored in `main.js` (search for `SPEED`) and in the table in `index.html`, which is what screen readers and visitors without JavaScript get. Update both if you re-measure.
-6. **Now picture yours.** The visitor types a business name and area, picks a type and colour, and a phone shows a sketch of a homepage. "Start a project" copies the details into the contact form. Wording per business type is in `main.js` (search for `TYPES`).
-7. **Services.** Website tile (the browser mockup scrolls its page as you scroll), social media tile (the Reel phone tilts as it passes, plus an example caption in English, Malay and Mandarin), and "Also handled". Below it, a three-question helper that suggests where to start (wording in `main.js`, search for `HELPER`). The phone sketch in "Now picture yours" tips up into place as it arrives.
-8. **Process.** Four steps; a line fills and each step lights up as you scroll.
-9. **About.** The desk video opens up as it comes into view and slowly pulls back as it crosses the screen, with the About text and facts.
-10. **Testimonials.** Hidden until the clients approve the draft wording (see below).
-11. **Contact.** The heading slides in as you arrive. WhatsApp button, contact details and the form. The form shows a live preview of the WhatsApp message and opens WhatsApp when sent. Nothing is stored.
-12. **Footer.** The name fills with tangerine as you reach the bottom.
+4. **Showreel.** The 25-second promo film. It opens out of cinema bars as you scroll to it, then plays muted on a loop while it is on screen, with Pause and Sound buttons. Visitors with reduced motion or data saver, or without JavaScript, get the poster and the browser's own controls, so nothing plays by itself. To swap the film, replace `alfred-showreel.mp4` and `alfred-showreel.webp` (keep 16:9) under new filenames and update the `video` tag.
+5. **Selected work.** On computers with a mouse or trackpad (760 px wide and up) the section pins and scrolling moves the nine project cards sideways, with the orange progress line staying on screen underneath them. Cards shrink a little on short screens so the line always fits. Resting the mouse on a card's preview scrolls through that client's whole homepage. On phones and tablets the cards are a swipeable row: cards turn slightly as they leave the middle, and once a card settles in the middle its homepage scrolls by on its own (skipped with data saver). The last card invites the visitor to start a project.
+6. **Speed.** An interactive bar chart (in the style of Bklit charts, drawn in plain SVG) of how quickly the nine example sites load on a phone. Bars grow in when the chart arrives, hovering or tapping a bar shows its numbers, and a toggle switches between load time and page weight. A dashed line marks the median, which is also the big number above the chart. The numbers are real measurements, described in the note under the chart; they are stored in `main.js` (search for `SPEED`) and in the table in `index.html`, which is what screen readers and visitors without JavaScript get. Update both if you re-measure.
+7. **Now picture yours.** The visitor types a business name and area, picks a type and colour, and a phone shows a sketch of a homepage. "Start a project" copies the details into the contact form. Wording per business type is in `main.js` (search for `TYPES`).
+8. **Services.** Website tile (the browser mockup scrolls its page as you scroll), social media tile (the Reel phone tilts as it passes, plus an example caption in English, Malay and Mandarin), and "Also handled". Below it, a three-question helper that suggests where to start (wording in `main.js`, search for `HELPER`). The phone sketch in "Now picture yours" tips up into place as it arrives.
+9. **Process.** Four steps; a line fills and each step lights up as you scroll.
+10. **About.** The desk video opens up as it comes into view and slowly pulls back as it crosses the screen, with the About text and facts.
+11. **Testimonials.** Hidden until the clients approve the draft wording (see below).
+12. **Contact.** The heading slides in as you arrive. WhatsApp button, contact details and the form. The form shows a live preview of the WhatsApp message and opens WhatsApp when sent. Nothing is stored.
+13. **Footer.** The name fills with tangerine as you reach the bottom.
 
 The scroll-linked effects use CSS scroll-driven animations (current Chrome, Edge and Safari). Browsers without them simply show each section in its final state.
 
